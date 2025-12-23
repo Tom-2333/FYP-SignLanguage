@@ -1,0 +1,589 @@
+:root {
+  --bg: rgb(244, 244, 246);
+  --bg-alt: rgb(220, 220, 226);
+  --text-color: rgb(12, 12, 12);
+  --selected-bg: rgb(229, 229, 234);
+  --nav-height: 64px;
+}
+
+/* Reset & 基本設定 */
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text-color);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 外層容器 */
+.chatgpt-bg {
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 主內容區 */
+.chatgpt-main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 20px 16px 130px; /* 下方留空間給輸入框 */
+  height: 100vh;
+  overflow-y: auto;
+  color: var(--text-color);
+  position: relative;
+  z-index: 50;
+}
+
+/* model card */
+.model-card {
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--bg-alt);
+  margin-bottom: 14px;
+  color: var(--text-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.model-card-title {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.model-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #8be9fd, #7b61ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bg);
+  font-size: 18px;
+}
+.model-card .muted {
+  color: var(--text-color);
+  opacity: 0.7;
+  font-size: 14px;
+}
+.model-card-actions {
+  display: flex;
+  gap: 12px;
+}
+.tag {
+  background: var(--bg-alt);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--text-color);
+  border: 1px solid var(--bg-alt);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+.tag:hover,
+.tag:focus {
+  background: var(--selected-bg);
+  outline: none;
+}
+
+/* 聊天歷史側邊欄 */
+.chat-sidebar {
+  position: fixed;
+  top: 0;
+  left: -320px; /* 預設隱藏 */
+  width: 320px;
+  height: 100vh;
+  background: var(--bg);
+  color: var(--text-color);
+  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.1);
+  transition: left 0.3s cubic-bezier(.4,0,.2,1);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px 16px 16px;
+  z-index: 120;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-alt) var(--bg);
+}
+.chat-sidebar.open {
+  left: 0;
+}
+.chat-sidebar.closed {
+  left: -320px;
+}
+.chat-sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+.chat-sidebar::-webkit-scrollbar-thumb {
+  background-color: var(--bg-alt);
+  border-radius: 8px;
+}
+
+/* 新增聊天按鈕 */
+.new-chat-btn {
+  background: var(--text-color);
+  color: var(--bg);
+  border: none;
+  border-radius: 24px;
+  padding: 10px 24px;
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 24px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.new-chat-btn:hover,
+.new-chat-btn:focus {
+  background: #333;
+  outline: none;
+}
+
+/* 聊天歷史標題 */
+.chat-history-title {
+  font-weight: 600;
+  margin-bottom: 12px;
+  font-size: 15px;
+}
+
+/* 聊天歷史列表 */
+.chat-history-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* 聊天歷史項目 */
+.chat-history-item {
+  background: var(--bg-alt);
+  color: var(--text-color);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  box-shadow: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.chat-history-item:hover,
+.chat-history-item:focus {
+  background: var(--selected-bg);
+  outline: none;
+}
+.chat-history-item.selected {
+  background: var(--selected-bg);
+  box-shadow: 0 0 0 2px var(--text-color);
+  font-weight: 700;
+}
+
+/* 刪除按鈕 */
+.delete-chat-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 6px;
+  transition: color 0.2s ease;
+}
+.delete-chat-btn:hover,
+.delete-chat-btn:focus {
+  color: var(--selected-bg);
+  outline: none;
+}
+
+/* 遮罩 */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 110;
+  cursor: pointer;
+}
+
+/* 訊息區域 */
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+  padding-bottom: 220px; /* 預留輸入框空間 */
+  color: var(--text-color);
+}
+
+/* 空訊息提示 */
+.empty-message {
+  color: #666;
+  text-align: center;
+  margin-top: 40px;
+}
+
+/* 單則訊息 */
+.message {
+  display: flex;
+  gap: 10px;
+  max-width: 85%;
+  align-items: flex-start;
+  width: fit-content;
+}
+
+/* 使用者訊息靠右 */
+.message.user {
+  margin-left: auto;
+  flex-direction: row-reverse;
+}
+
+/* 大頭貼 / 圖示 */
+.msg-avatar {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  background: linear-gradient(135deg, #7b61ff, #6dd5fa);
+  color: var(--bg);
+  font-size: 14px;
+}
+
+/* 訊息框 */
+.msg-content {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--bg-alt);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  color: var(--text-color);
+  white-space: pre-wrap;
+}
+
+/* 使用者訊息背景 */
+.message.user .msg-content {
+  background: var(--selected-bg);
+  color: var(--text-color);
+}
+
+/* 打字動畫 */
+.typing-dots {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg-alt);
+  border-radius: 12px;
+  color: var(--text-color);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background: var(--text-color);
+  border-radius: 50%;
+  display: inline-block;
+  animation: blink 1s infinite ease-in-out;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes blink {
+  0% {
+    opacity: 0.2;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+  100% {
+    opacity: 0.2;
+    transform: translateY(0);
+  }
+}
+
+/* 固定輸入框 */
+.chatgpt-input-fixed {
+  position: fixed;
+  left: 50%;
+  bottom: 15px;
+  transform: translateX(-50%);
+  width: 900px;
+  max-width: 98vw;
+  background: rgb(230, 230, 235);
+  z-index: 100;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  box-shadow: none;
+  border-radius: 15px;
+  border: 1.5px solid var(--bg-alt);
+  padding: 18px 28px;
+  height: 100px;
+  color: var(--text-color);
+}
+
+.chatgpt-input-bar {
+  width: 65%;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: rgb(230, 230, 235);
+  box-shadow: none;
+  border-radius: 22px;
+  padding: 0;
+}
+
+.chatgpt-input {
+  flex: 1;
+  font-size: 1.1rem;
+  line-height: 1.5;
+  padding: 15px;
+  border: none;
+  background: transparent;
+  color: var(--text-color);
+  outline: none;
+  min-width: 0;
+}
+
+.chatgpt-input::placeholder {
+  color: rgb(180, 180, 180);
+  font-size: 1.1rem;
+}
+
+.chatgpt-send-btn {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  font-size: 2rem;
+  cursor: pointer;
+  margin-left: auto;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.chatgpt-send-btn:hover,
+.chatgpt-send-btn:focus {
+  color: var(--selected-bg);
+}
+
+/* 錯誤提示 */
+.error-alert {
+  position: fixed;
+  bottom: 130px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #f87171;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  z-index: 200;
+  font-weight: 600;
+}
+
+/* 響應式調整 */
+@media (max-width: 900px) {
+  .chatgpt-input-fixed {
+    width: 99vw;
+    padding: 12px 4vw;
+    border-radius: 16px;
+    height: 90px;
+  }
+  .chatgpt-input-bar {
+    border-radius: 16px;
+  }
+  .chatgpt-send-btn {
+    font-size: 1.5rem;
+  }
+}
+
+
+
+
+
+/* Bottom nav (原本的 full-width bottom nav，保留但不用時會被新按鈕替代視覺) */
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--nav-height);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: var(--nav-bg);
+  border-top: 1px solid rgba(0,0,0,0.08);
+  padding: 8px calc(env(safe-area-inset-left) + 8px) calc(env(safe-area-inset-bottom) + 8px) calc(env(safe-area-inset-right) + 8px);
+  z-index: 50;
+  /* subtle shadow */
+  box-shadow: 0 -1px 8px rgba(0,0,0,0.04);
+}
+
+/* Each nav item */
+.nav-item {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 12px;
+  width: 64px;
+  transition: color 180ms ease, transform 180ms ease;
+  padding: 2px;
+}
+
+/* Icon */
+.nav-icon {
+  font-size: 20px;
+  margin-bottom: 4px;
+  color: inherit;
+  transition: transform 180ms ease, color 180ms ease;
+}
+
+/* Active state */
+.nav-item.active {
+  color: var(--accent);
+}
+
+.nav-item.active .nav-icon {
+  transform: translateY(-3px);
+  color: var(--accent);
+}
+
+/* small indicator under the label like a highlight bar */
+.nav-item.active::after {
+  content: "";
+  margin-top: 6px;
+  width: 36%;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  display: block;
+}
+
+/* Hover/focus behavior for desktop */
+.nav-item:focus,
+.nav-item:hover {
+  color: #222;
+  outline: none;
+}
+
+@media (min-width: 900px) {
+  /* On wide screens keep the nav visible or make it non-fixed if you prefer */
+  .bottom-nav { max-width: 760px; margin: 0 auto; left: 0; right: 0; border-radius: 8px 8px 0 0; }
+}
+
+/* -------------------------
+   新增：浮動按鈕與面板樣式
+   ------------------------- */
+
+/* 外層容器，包含按鈕與面板 */
+.floating-toggle {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 120;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  pointer-events: none; /* 讓內部按鈕/面板自行控制 pointer-events */
+}
+
+/* Toggle 按鈕（圓形） */
+.toggle-btn {
+  pointer-events: auto;
+  border: none;
+  background: var(--accent);
+  /* color: white; */
+  color: black;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+  transition: transform 160ms ease, background 160ms ease;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+/* hover / focus */
+.toggle-btn:hover,
+.toggle-btn:focus {
+  transform: translateY(-2px);
+  outline: none;
+}
+
+/* Floating nav panel (預設隱藏) */
+.floating-nav {
+  pointer-events: none;
+  transform-origin: left bottom;
+  transform: translateY(8px) scale(0.98);
+  opacity: 0;
+  transition: transform 200ms cubic-bezier(.2,.9,.2,1), opacity 180ms ease;
+  background: var(--nav-bg);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+/* 開啟狀態 */
+.floating-nav.open {
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+/* 調整面板中 nav-item 尺寸 (讓浮動選單更精簡) */
+.floating-nav .nav-item {
+  width: auto;
+  padding: 8px 10px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+/* icon 與 label 排列 */
+.floating-nav .nav-icon {
+  margin-bottom: 0;
+  margin-right: 8px;
+  font-size: 18px;
+}
+
+/* 開啟時的小高亮（覆寫） */
+.floating-nav .nav-item.active {
+  background: rgba(17,17,17,0.06);
+  color: var(--accent);
+}
+
+/* Backdrop (半透明遮罩)，放在 body 之上但在 toggle 之下或相同 z-index 視需求 */
+.floating-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: rgba(0,0,0,0.12);
+  backdrop-filter: blur(2px);
+}
