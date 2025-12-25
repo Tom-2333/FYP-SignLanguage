@@ -1,325 +1,196 @@
-// src/pages/chatBox.jsx
 import React, { useState, useRef, useEffect } from 'react'
-import { FaRobot, FaChevronRight, FaTrashAlt } from 'react-icons/fa'
+import { FaChevronRight, FaTrashAlt, FaCamera, FaKeyboard, FaSearch, FaHistory } from 'react-icons/fa'
 import { v4 as uuidv4 } from 'uuid'
 
 export default function ChatBox() {
-  const inputRef = useRef(null)
-  const messagesEndRef = useRef(null)
-  const replyTimeoutRef = useRef(null)
-
+  const videoRef = useRef(null)
   const [input, setInput] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
-
-  const [chatHistory, setChatHistory] = useState([
-    {
-      id: uuidv4(),
-      title: '2025/10/10 測試對話',
-      createdAt: new Date('2025-10-10'),
-      updatedAt: new Date('2025-10-10'),
-      messages: [
-        { id: uuidv4(), role: 'assistant', text: '這是歷史訊息範例。' }
-      ]
-    },
-    {
-      id: uuidv4(),
-      title: '2025/10/12 另一個對話',
-      createdAt: new Date('2025-10-12'),
-      updatedAt: new Date('2025-10-12'),
-      messages: [
-        { id: uuidv4(), role: 'assistant', text: '歡迎回來！' }
-      ]
-    }
+  const [isCamOpen, setIsCamOpen] = useState(false)
+  const [detectedText, setDetectedText] = useState('等待手語信號...') 
+  
+  // 左側手語轉換歷史 (對應圖三左側)
+  const [history, setHistory] = useState([
+    { id: '1', text: '我上課', time: '10:30' },
+    { id: '2', text: '謝謝你', time: '09:15' }
   ])
 
-  const [activeChatId, setActiveChatId] = useState(null)
-  const [messages, setMessages] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-
-  // 滾動到底部
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isTyping])
-
-  useEffect(() => {
-    return () => {
-      if (replyTimeoutRef.current) clearTimeout(replyTimeoutRef.current)
+    let stream = null
+    if (isCamOpen) {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(s => {
+          stream = s
+          if (videoRef.current) videoRef.current.srcObject = s
+          setDetectedText("正在辨識手勢...")
+        })
     }
-  }, [])
+    return () => stream?.getTracks().forEach(t => t.stop())
+  }, [isCamOpen])
 
-  useEffect(() => {
-    if (activeChatId) {
-      const chat = chatHistory.find(c => c.id === activeChatId)
-      if (chat) setMessages(chat.messages)
-    } else {
-      setMessages([])
-    }
-  }, [activeChatId, chatHistory])
-
-  function sendMessage(text) {
-    const trimmed = String(text || '').trim()
-    if (!trimmed) return
-    setError(null)
-    setLoading(true)
-
-    const userMsg = { id: uuidv4(), role: 'user', text: trimmed }
-    const newMessages = [...messages, userMsg]
-    setMessages(newMessages)
-    setInput('')
-
-    if (replyTimeoutRef.current) clearTimeout(replyTimeoutRef.current)
-    replyTimeoutRef.current = setTimeout(() => {
-      try {
-        const reply = `已收到您的訊息：「${trimmed}」。這是一個範例回覆（模擬）。`
-        const assistantMsg = { id: uuidv4(), role: 'assistant', text: reply }
-        const updatedMessages = [...newMessages, assistantMsg]
-        setMessages(updatedMessages)
-        setLoading(false)
-        setIsTyping(false)
-
-        if (activeChatId) {
-          setChatHistory(chats => chats.map(c => {
-            if (c.id === activeChatId) {
-              return {
-                ...c,
-                messages: updatedMessages,
-                updatedAt: new Date()
-              }
-            }
-            return c
-          }))
-        } else {
-          const newChat = {
-            id: uuidv4(),
-            title: `新聊天 ${new Date().toLocaleString()}`,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            messages: updatedMessages
-          }
-          setChatHistory(chats => [newChat, ...chats])
-          setActiveChatId(newChat.id)
-        }
-      } catch (e) {
-        setError('回覆出錯，請稍後再試。')
-        setLoading(false)
-        setIsTyping(false)
-      }
-    }, 800)
-
-    setIsTyping(true)
-  }
-
-  function handleSubmit(e) {
+  const handleSend = (e) => {
     e.preventDefault()
-    sendMessage(input)
-  }
-
-  function handleToggleSidebar() {
-    setSidebarOpen(open => !open)
-  }
-
-  function handleNewChat() {
-    setActiveChatId(null)
-    setMessages([])
+    if (!input.trim()) return
+    const newEntry = { id: uuidv4(), text: input, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }
+    setHistory([newEntry, ...history])
     setInput('')
-    setSidebarOpen(false)
-    inputRef.current?.focus()
-  }
-
-  function handleLoadHistory(chatId) {
-    setActiveChatId(chatId)
-    setSidebarOpen(false)
-  }
-
-  function handleDeleteChat(chatId) {
-    if (!window.confirm('確定要刪除此聊天紀錄？此操作無法復原。')) return
-    setChatHistory(chats => chats.filter(c => c.id !== chatId))
-    if (activeChatId === chatId) {
-      setActiveChatId(null)
-      setMessages([])
-    }
   }
 
   return (
-    <div className="chatgpt-bg chatgpt-full" role="main" aria-label="聊天介面">
-      
-      {/* Sidebar */}
-      <aside
-        className={`chat-sidebar ${sidebarOpen ? 'open' : 'closed'}`}
-        aria-label="聊天歷史側邊欄"
-        aria-hidden={!sidebarOpen}
-      >
-        <button
-          className="new-chat-btn"
-          onClick={handleNewChat}
-          aria-label="新增聊天"
-        >
-          新增聊天
-        </button>
-
-        <div className="chat-history-title">聊天歷史</div>
-
-        <div
-          className="chat-history-list"
-          tabIndex={0}
-          aria-label="聊天歷史列表"
-        >
-          {chatHistory.length === 0 ? (
-            <div className="empty-history">尚無聊天紀錄</div>
-          ) : (
-            chatHistory.map(chat => (
-              <div
-                key={chat.id}
-                role="button"
-                tabIndex={0}
-                aria-pressed={activeChatId === chat.id}
-                className={`chat-history-item ${activeChatId === chat.id ? 'selected' : ''}`}
-                onClick={() => handleLoadHistory(chat.id)}
-                onKeyDown={e => { if (e.key === 'Enter') handleLoadHistory(chat.id) }}
-              >
-                <span className="chat-title">{chat.title}</span>
-                <button
-                  aria-label={`刪除聊天紀錄: ${chat.title}`}
-                  onClick={e => {
-                    e.stopPropagation()
-                    handleDeleteChat(chat.id)
-                  }}
-                  className="delete-chat-btn"
-                >
-                  <FaTrashAlt />
-                </button>
+    <div className="chat-app">
+      {/* 1. 左側手語紀錄欄 */}
+      <aside className="app-sidebar">
+        <div className="sidebar-header">
+          <div className="search-bar">
+            <FaSearch />
+            <input type="text" placeholder="搜尋歷史紀錄..." />
+          </div>
+        </div>
+        <div className="history-container">
+          <div className="history-label"><FaHistory /> 轉換紀錄</div>
+          {history.map(item => (
+            <div key={item.id} className="history-card" onClick={() => setInput(item.text)}>
+              <div className="history-info">
+                <span className="history-text">{item.text}</span>
+                <span className="history-time">{item.time}</span>
               </div>
-            ))
-          )}
+              <FaTrashAlt className="del-btn" />
+            </div>
+          ))}
         </div>
       </aside>
 
-      {/* 遮罩 */}
-      {sidebarOpen && (
-        <div
-          className="sidebar-backdrop"
-          onClick={() => setSidebarOpen(false)}
-          aria-hidden="true"
-        />
-      )}
+      {/* 2. 右側主內容區 */}
+      <main className="app-main">
+        <header className="main-nav">GPT-Sign-Language 助手</header>
 
-      {/* 主內容區 */}
-      <main className="chatgpt-main chatgpt-main-fixed">
-        {/* Model Card */}
-        <section className="model-card" aria-hidden="false">
-          <div className="model-card-top">
-            <div className="model-card-title">
-              <div className="model-icon" aria-hidden="true">
-                <FaRobot />
+        <div className="chat-messages">
+          {/* 訊息流區塊 */}
+        </div>
+
+        {/* 圖三核心優化：視覺反饋區 */}
+        <section className="sign-visual-section">
+          
+          {/* 【關鍵修改】：高度 x3 的輸出 Bar，用來放置多個 GIF 框 */}
+          <div className="sign-status-bar x3-height">
+            {isCamOpen ? (
+              <span className="blinking">● {detectedText}</span>
+            ) : (
+              <div className="gif-sequence-wrapper">
+                {input ? (
+                  <div className="gif-flex-container">
+                    {/* 這裡對應圖三底部的 gif1 + gif2 -> entire gif 邏輯 */}
+                    {input.split('').map((char, i) => (
+                      <div key={i} className="gif-box-unit">
+                        <div className="gif-placeholder-img">GIF</div>
+                        <span className="gif-label">{char}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="placeholder-text">請輸入文字，此處將顯示手語 GIF 序列</span>
+                )}
               </div>
-              <div>
-                <strong>GPT-Sign-Language</strong>
-                <div className="muted" style={{ marginTop: 6 }}>
-                  GPT-Sign-Language 是一個手語對話機器人。
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
-          <div className="model-card-actions">
-            <span
-              className="tag"
-              role="button"
-              tabIndex={0}
-              aria-pressed={sidebarOpen}
-              onClick={handleToggleSidebar}
-              onKeyDown={e => { if (e.key === 'Enter') handleToggleSidebar() }}
-            >
-              歷史紀錄
-            </span>
-            <span
-              className="tag"
-              role="button"
-              tabIndex={0}
-              onClick={handleNewChat}
-              onKeyDown={e => { if (e.key === 'Enter') handleNewChat() }}
-            >
-              + 新訊息
-            </span>
+          {/* 相機框保持正常比例 */}
+          <div className="main-display-box">
+            {isCamOpen ? (
+              <video ref={videoRef} autoPlay playsInline className="video-stream" />
+            ) : (
+              <div className="empty-visual">
+                <p>相機已關閉</p>
+                <small>點擊下方相機圖標開啟實時辨識</small>
+              </div>
+            )}
           </div>
         </section>
 
-        {/* 訊息區 */}
-        <div
-          className="messages messages-scroll"
-          role="log"
-          aria-live="polite"
-          aria-relevant="additions"
-          tabIndex={-1}
-        >
-          {messages.length === 0 && !loading && (
-            <div className="empty-message">尚無聊天訊息，請開始新的對話。</div>
-          )}
-
-          {messages.map(m => (
-            <div key={m.id} className={`message ${m.role === 'user' ? 'user' : 'assistant'}`}>
-              <div className="msg-avatar" aria-hidden="true">
-                {m.role === 'assistant' ? <FaRobot /> : '您'}
-              </div>
-              <div className={`msg-content msg-content-${m.role}`}>{m.text}</div>
-            </div>
-          ))}
-
-          {isTyping && (
-            <div className="message assistant typing">
-              <div className="msg-avatar" aria-hidden="true">
-                <FaRobot />
-              </div>
-              <div className="msg-content typing-dots" aria-hidden="true">
-                <span className="dot" />
-                <span className="dot" />
-                <span className="dot" />
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* 輸入框 */}
-        {!sidebarOpen && (
-          <form
-            className="chatgpt-input-bar chatgpt-input-fixed"
-            onSubmit={handleSubmit}
-            aria-label="輸入訊息"
-          >
-            <input
-              ref={inputRef}
-              className="chatgpt-input"
-              type="text"
-              placeholder="輸入訊息..."
+        {/* 底部輸入控制 */}
+        <footer className="control-footer">
+          <form className="main-input-group" onSubmit={handleSend}>
+            <input 
+              type="text" 
               value={input}
-              onChange={e => setInput(e.target.value)}
-              autoFocus
-              aria-label="輸入訊息"
-              disabled={loading}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={isCamOpen ? "相機模式辨識中..." : "請在此輸入文字..."}
+              disabled={isCamOpen}
             />
-            <button
-              className="chatgpt-send-btn"
-              type="submit"
-              aria-label="送出"
-              disabled={loading || input.trim() === ''}
-            >
+            <button type="submit" className="icon-btn send-btn" disabled={!input}>
               <FaChevronRight />
             </button>
           </form>
-        )}
-
-        {error && (
-          <div
-            role="alert"
-            className="error-alert"
+          
+          <button 
+            className={`mode-toggle-btn ${isCamOpen ? 'cam-active' : ''}`}
+            onClick={() => setIsCamOpen(!isCamOpen)}
           >
-            {error}
-          </div>
-        )}
+            {isCamOpen ? <FaKeyboard /> : <FaCamera />}
+          </button>
+        </footer>
       </main>
+
+      <style jsx>{`
+        .chat-app { display: flex; height: 100vh; width: 100vw; overflow: hidden; font-family: sans-serif; background: #fff; }
+        
+        /* Sidebar 樣式 */
+        .app-sidebar { width: 300px; background: #f7f7f8; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px 15px; }
+        .search-bar { display: flex; align-items: center; background: white; padding: 10px 15px; border-radius: 8px; border: 1px solid #eee; }
+        .search-bar input { border: none; outline: none; margin-left: 10px; width: 100%; }
+        .history-container { flex: 1; overflow-y: auto; padding: 10px; }
+        .history-label { font-size: 13px; color: #888; margin-bottom: 12px; font-weight: bold; }
+        .history-card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid #eee; }
+        .history-card:hover { border-color: #10a37f; }
+
+        .app-main { flex: 1; display: flex; flex-direction: column; }
+        .main-nav { padding: 15px 25px; border-bottom: 1px solid #eee; font-weight: bold; }
+        .chat-messages { flex: 1; }
+
+        /* 視覺反饋區 */
+        .sign-visual-section { padding: 20px; background: #fff; display: flex; flex-direction: column; gap: 15px; }
+        
+        /* 【關鍵】加高 3 倍的 Bar */
+        .sign-status-bar.x3-height { 
+          width: 100%; 
+          height: 180px; /* 原本約 60px，現在加高到 180px */
+          background: #f9f9f9; 
+          border: 2px solid #10a37f; 
+          border-radius: 15px; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center;
+          overflow-x: auto; /* 文字太長時可以橫向捲動 GIF */
+          padding: 10px;
+        }
+
+        /* GIF 序列排版 */
+        .gif-flex-container { display: flex; gap: 15px; padding: 0 10px; }
+        .gif-box-unit { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .gif-placeholder-img { 
+          width: 120px; height: 120px; background: #ddd; 
+          border-radius: 8px; display: flex; align-items: center; 
+          justify-content: center; font-size: 12px; font-weight: bold; color: #666;
+        }
+        .gif-label { font-size: 14px; font-weight: bold; color: #10a37f; }
+
+        /* 相機展示框比例正常 */
+        .main-display-box { 
+          width: 100%; height: 350px; background: #1a1a1a; border-radius: 15px; 
+          overflow: hidden; display: flex; justify-content: center; align-items: center;
+        }
+        .video-stream { width: 100%; height: 100%; object-fit: cover; }
+        .empty-visual { color: #555; text-align: center; }
+
+        /* 底部輸入控制 */
+        .control-footer { padding: 20px; display: flex; gap: 15px; align-items: center; border-top: 1px solid #eee; }
+        .main-input-group { flex: 1; background: #f0f0f0; border-radius: 25px; display: flex; padding: 5px 20px; align-items: center; }
+        .main-input-group input { flex: 1; border: none; outline: none; background: transparent; padding: 10px; }
+        .mode-toggle-btn { width: 50px; height: 50px; border-radius: 15px; border: none; background: #f0f0f0; cursor: pointer; font-size: 20px; }
+        .mode-toggle-btn.cam-active { background: #10a37f; color: white; }
+        .blinking { color: #ff4d4f; animation: blinker 1.5s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+      `}</style>
     </div>
   )
 }
