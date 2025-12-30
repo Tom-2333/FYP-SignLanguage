@@ -37,6 +37,10 @@ export default function Auth({ mode = 'login' }) {
         return
       }
 
+      // Save login state and username
+      localStorage.setItem('isAuthenticated', 'true')
+      localStorage.setItem('userName', name || email.split('@')[0])
+      
       // On success navigate to vocabulary
       navigate('/vocabulary')
     }, 900)

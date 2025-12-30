@@ -273,6 +273,9 @@ export default function Vocabulary() {
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedWord, setSelectedWord] = useState(null)
   const [showDemo, setShowDemo] = useState(false) // true: show demo, false: show word list
+  const [searchQuery, setSearchQuery] = useState('') // Search query state
+  const [showSuggestions, setShowSuggestions] = useState(false) // Show search suggestions
+  const userName = localStorage.getItem('userName') || 'User'
   const wordsPerPage = 10
 
   const categoryKeys = Object.keys(dictionaryData)
@@ -286,23 +289,38 @@ export default function Vocabulary() {
     ? { name: 'All Words', words: allWords }
     : dictionaryData[selectedCategory]
   
-  const totalWords = currentCategoryData.words.length
+  // Filter words based on search query
+  const filteredWords = currentCategoryData.words.filter(word => 
+    word.word.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+  
+  const totalWords = filteredWords.length
   const totalPages = Math.ceil(totalWords / wordsPerPage)
   
   // Get words for current page
   const startIndex = (currentPage - 1) * wordsPerPage
   const endIndex = startIndex + wordsPerPage
-  const currentWords = currentCategoryData.words.slice(startIndex, endIndex)
+  const currentWords = filteredWords.slice(startIndex, endIndex)
 
   useEffect(() => {
     // request camera when component mounts
     const start = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
-        if (videoRef.current) videoRef.current.srcObject = stream
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: 'user',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          } 
+        })
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          // Wait for metadata and play
+          await videoRef.current.play()
+        }
         setCameraAllowed(true)
       } catch (err) {
-        console.warn('Camera not available:', err)
+        console.error('Camera error:', err)
         setCameraAllowed(false)
       }
     }
@@ -310,9 +328,8 @@ export default function Vocabulary() {
 
     return () => {
       // stop tracks on unmount
-      const video = videoRef.current
-      if (video && video.srcObject) {
-        const tracks = video.srcObject.getTracks()
+      if (videoRef.current && videoRef.current.srcObject) {
+        const tracks = videoRef.current.srcObject.getTracks()
         tracks.forEach(t => t.stop())
       }
     }
@@ -332,6 +349,13 @@ export default function Vocabulary() {
 
   const handlePageChange = (page) => {
     setCurrentPage(page)
+  }
+
+  const handleSuggestionClick = (word) => {
+    setSelectedWord(word)
+    setShowDemo(true)
+    setSearchQuery('')
+    setShowSuggestions(false)
   }
 
   const renderPagination = () => {
@@ -395,14 +419,14 @@ export default function Vocabulary() {
           </div>
           <span>{selectedWord ? getConfidence(selectedWord.id) : 0}%</span>
         </div>
-        <div className="vocab-greeting">Hello 👋 <small className="muted">(Practice Mode)</small></div>
+        <div className="vocab-greeting">Hello, {userName}! 👋</div>
       </header>
 
       {/* Progress and Selected Word Info */}
       <div className="vocab-info-bar">
         <div className="info-item">
           <span className="info-label">Progress:</span>
-          <span className="info-value">{selectedWord ? `${currentCategoryData.words.findIndex(w => w.id === selectedWord.id) + 1}/${totalWords}` : `0/${totalWords}`}</span>
+          <span className="info-value">{selectedWord ? `${currentCategoryData.words.findIndex(w => w.id === selectedWord.id) + 1}/${currentCategoryData.words.length}` : `0/${currentCategoryData.words.length}`}</span>
         </div>
         {selectedWord && (
           <div className="info-item">
@@ -410,6 +434,53 @@ export default function Vocabulary() {
             <span className="info-value selected-word-name">{selectedWord.word}</span>
           </div>
         )}
+        <div className="search-container">
+          <input
+            type="text"
+            placeholder="Search words..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value)
+              setCurrentPage(1)
+              setShowSuggestions(e.target.value.length > 0)
+            }}
+            onFocus={() => searchQuery.length > 0 && setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+            className="search-input"
+          />
+          {searchQuery && (
+            <button 
+              className="clear-search"
+              onClick={() => {
+                setSearchQuery('')
+                setCurrentPage(1)
+                setShowSuggestions(false)
+              }}
+            >
+              ✕
+            </button>
+          )}
+          {/* Search Suggestions Dropdown */}
+          {showSuggestions && filteredWords.length > 0 && (
+            <div className="search-suggestions">
+              {filteredWords.slice(0, 10).map((word) => (
+                <div
+                  key={word.id}
+                  className="suggestion-item"
+                  onClick={() => handleSuggestionClick(word)}
+                >
+                  <span className="suggestion-word">{word.word}</span>
+                  <span className="suggestion-id">ID: {word.id}</span>
+                </div>
+              ))}
+              {filteredWords.length > 10 && (
+                <div className="suggestion-more">
+                  +{filteredWords.length - 10} more results
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <section className="vocab-main">
@@ -423,7 +494,7 @@ export default function Vocabulary() {
                 className={`category-btn ${key === selectedCategory ? 'active' : ''} ${key === 'All' ? 'all-btn' : ''}`}
                 onClick={() => handleCategoryClick(key)}
               >
-                {key}. {dictionaryData[key].name}
+                {dictionaryData[key].name}
               </button>
             ))}
           </div>
@@ -435,7 +506,7 @@ export default function Vocabulary() {
             /* Word List View */
             <div className="vocab-card word-list-box">
               <div className="box-title">
-                {selectedCategory}. {currentCategoryData.name}
+                {currentCategoryData.name}
               </div>
               <div className="word-grid">
                 {currentWords.map((item) => (
@@ -465,10 +536,11 @@ export default function Vocabulary() {
                 <div className="gif-area">
                   {selectedWord ? (
                     <img 
-                      src={`../../HKSLLEX-video-2023-webp/${selectedWord.id}.webp`}
+                      src={`/HKSLLEX-video-2023-webp/HKSLLEX-2023-${selectedWord.id.padStart(8, '0')}-${selectedWord.word}.webp`}
                       alt={selectedWord.word}
                       className="sign-video"
                       onError={(e) => {
+                        console.error('Failed to load image:', e.target.src)
                         e.target.style.display = 'none'
                         e.target.nextSibling.style.display = 'flex'
                       }}
@@ -518,23 +590,23 @@ export default function Vocabulary() {
                   </div>
                 )}
               </div>
-
-              {/* Camera Box */}
-              <div className="vocab-card cam-box">
-                <div className="box-title">Your Sign (Camera)</div>
-                <div className="cam-wrap">
-                  <video ref={videoRef} autoPlay playsInline muted className={cameraAllowed ? 'live' : 'hidden'} />
-                  {!cameraAllowed && (
-                    <div className="cam-placeholder">
-                      <div style={{fontSize:28}}>📷</div>
-                      <div>Camera Feed</div>
-                      <small>Allow camera to practice</small>
-                    </div>
-                  )}
-                </div>
-              </div>
             </>
           )}
+
+          {/* Camera Box - Always rendered, but hidden when not in demo view */}
+          <div className="vocab-card cam-box" style={{display: showDemo ? 'block' : 'none'}}>
+            <div className="box-title">Your Sign (Camera)</div>
+            <div className="cam-wrap">
+              <video ref={videoRef} autoPlay playsInline muted className={cameraAllowed ? 'live' : 'hidden'} />
+              {!cameraAllowed && (
+                <div className="cam-placeholder">
+                  <div style={{fontSize:28}}>📷</div>
+                  <div>Camera Feed</div>
+                  <small>Allow camera to practice</small>
+                </div>
+              )}
+            </div>
+          </div>
         </main>
 
       </section>

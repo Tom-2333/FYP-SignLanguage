@@ -1,11 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { NavLink } from 'react-router-dom'
-import { FaBookOpen, FaComments, FaBars, FaTimes } from 'react-icons/fa'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { FaBookOpen, FaComments, FaBars, FaTimes, FaSignOutAlt } from 'react-icons/fa'
 
 export default function BottomNav() {
   const [open, setOpen] = useState(false)
   const containerRef = useRef(null)
   const btnRef = useRef(null)
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated')
+    setOpen(false)
+    navigate('/login')
+  }
 
   // close when clicking outside
   useEffect(() => {
@@ -68,6 +75,11 @@ export default function BottomNav() {
             <FaComments className="nav-icon" aria-hidden />
             <span className="nav-label">ChatBox</span>
           </NavLink>
+
+          <button className="nav-item logout-btn" onClick={handleLogout}>
+            <FaSignOutAlt className="nav-icon" aria-hidden />
+            <span className="nav-label">Log out</span>
+          </button>
         </nav>
       </div>
 
