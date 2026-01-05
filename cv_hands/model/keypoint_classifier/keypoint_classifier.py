@@ -1,36 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import numpy as np
-import os
-
-# TensorFlow Lite import
-try:
-    import tensorflow as tf
-    # For TF 2.16+
-    try:
-        from tensorflow import lite as tflite
-    except:
-        import tensorflow.lite as tflite
-except ImportError:
-    # Fallback to tflite_runtime if available
-    import tflite_runtime.interpreter as tflite
+import tensorflow as tf
 
 
 class KeyPointClassifier(object):
     def __init__(
         self,
         model_path='model/keypoint_classifier/keypoint_classifier.tflite',
-        num_threads=2,  # Increased threads for better performance
+        num_threads=1,
     ):
-        # Check if model file exists
-        if not os.path.exists(model_path):
-            raise FileNotFoundError(f"Model file not found: {model_path}")
-        
-        # Use TFLite Interpreter - works with TF 2.x
-        try:
-            self.interpreter = tf.lite.Interpreter(model_path=model_path, num_threads=num_threads)
-        except AttributeError:
-            self.interpreter = tflite.Interpreter(model_path=model_path, num_threads=num_threads)
+        self.interpreter = tf.lite.Interpreter(model_path=model_path,
+                                               num_threads=num_threads,
+                                               experimental_delegates=[])
 
         self.interpreter.allocate_tensors()
         self.input_details = self.interpreter.get_input_details()

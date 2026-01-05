@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import './vocabulary.css'
+import { Hands } from '@mediapipe/hands'
+import { Camera } from '@mediapipe/camera_utils'
 
 // Get confidence score for a word (currently hard-coded, will connect to API later)
 const getConfidence = (wordId) => {
@@ -268,6 +270,7 @@ const dictionaryData = {
 
 export default function Vocabulary() {
   const videoRef = useRef(null)
+  const canvasRef = useRef(null)
   const [cameraAllowed, setCameraAllowed] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [currentPage, setCurrentPage] = useState(1)
@@ -275,28 +278,30 @@ export default function Vocabulary() {
   const [showDemo, setShowDemo] = useState(false) // true: show demo, false: show word list
   const [searchQuery, setSearchQuery] = useState('') // Search query state
   const [showSuggestions, setShowSuggestions] = useState(false) // Show search suggestions
+  const [detectedGesture, setDetectedGesture] = useState('') // Detected hand gesture
+  const [handLandmarks, setHandLandmarks] = useState(null) // Hand landmarks data
   const userName = localStorage.getItem('userName') || 'User'
   const wordsPerPage = 10
 
   const categoryKeys = Object.keys(dictionaryData)
-  
+
   // Create All category with all words from other categories
   const allWords = categoryKeys
     .filter(key => key !== 'All')
     .flatMap(key => dictionaryData[key].words)
-  
-  const currentCategoryData = selectedCategory === 'All' 
+
+  const currentCategoryData = selectedCategory === 'All'
     ? { name: 'All Words', words: allWords }
     : dictionaryData[selectedCategory]
-  
+
   // Filter words based on search query
-  const filteredWords = currentCategoryData.words.filter(word => 
+  const filteredWords = currentCategoryData.words.filter(word =>
     word.word.toLowerCase().includes(searchQuery.toLowerCase())
   )
-  
+
   const totalWords = filteredWords.length
   const totalPages = Math.ceil(totalWords / wordsPerPage)
-  
+
   // Get words for current page
   const startIndex = (currentPage - 1) * wordsPerPage
   const endIndex = startIndex + wordsPerPage
@@ -306,12 +311,12 @@ export default function Vocabulary() {
     // request camera when component mounts
     const start = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
             facingMode: 'user',
             width: { ideal: 1280 },
             height: { ideal: 720 }
-          } 
+          }
         })
         if (videoRef.current) {
           videoRef.current.srcObject = stream
@@ -319,6 +324,36 @@ export default function Vocabulary() {
           await videoRef.current.play()
         }
         setCameraAllowed(true)
+
+        // Initialize MediaPipe Hands
+        const hands = new Hands({
+          locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+          }
+        })
+
+        hands.setOptions({
+          maxNumHands: 2,
+          modelComplexity: 1,
+          minDetectionConfidence: 0.7,
+          minTrackingConfidence: 0.5
+        })
+
+        hands.onResults(onHandsResults)
+
+        // Start camera processing
+        if (videoRef.current) {
+          const camera = new Camera(videoRef.current, {
+            onFrame: async () => {
+              if (videoRef.current) {
+                await hands.send({ image: videoRef.current })
+              }
+            },
+            width: 1280,
+            height: 720
+          })
+          camera.start()
+        }
       } catch (err) {
         console.error('Camera error:', err)
         setCameraAllowed(false)
@@ -328,12 +363,108 @@ export default function Vocabulary() {
 
     return () => {
       // stop tracks on unmount
-      if (videoRef.current && videoRef.current.srcObject) {
-        const tracks = videoRef.current.srcObject.getTracks()
+      const video = videoRef.current
+      if (video && video.srcObject) {
+        const tracks = video.srcObject.getTracks()
         tracks.forEach(t => t.stop())
       }
     }
   }, [])
+
+  const onHandsResults = (results) => {
+    // Save canvas reference
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const canvasCtx = canvas.getContext('2d')
+    if (!canvasCtx) return
+
+    // Clear canvas
+    canvasCtx.save()
+    canvasCtx.clearRect(0, 0, canvas.width, canvas.height)
+
+    // Draw the video frame
+    if (results.image) {
+      canvasCtx.drawImage(results.image, 0, 0, canvas.width, canvas.height)
+    }
+
+    // Draw hand landmarks if detected
+    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+      for (const landmarks of results.multiHandLandmarks) {
+        drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
+          color: '#00FF00',
+          lineWidth: 3
+        })
+        drawLandmarks(canvasCtx, landmarks, {
+          color: '#FF0000',
+          lineWidth: 1,
+          radius: 3
+        })
+      }
+
+      // Store landmarks for gesture recognition
+      setHandLandmarks(results.multiHandLandmarks)
+
+      // Simple gesture detection (placeholder - you can expand this)
+      const numHands = results.multiHandLandmarks.length
+      if (numHands === 1) {
+        setDetectedGesture('One hand detected')
+      } else if (numHands === 2) {
+        setDetectedGesture('Two hands detected')
+      }
+    } else {
+      setHandLandmarks(null)
+      setDetectedGesture('No hands detected')
+    }
+
+    canvasCtx.restore()
+  }
+
+  // Helper functions for drawing (simplified versions)
+  const drawConnectors = (ctx, landmarks, connections, style) => {
+    ctx.strokeStyle = style.color
+    ctx.lineWidth = style.lineWidth
+
+    for (const connection of connections) {
+      const [start, end] = connection
+      ctx.beginPath()
+      ctx.moveTo(
+        landmarks[start].x * ctx.canvas.width,
+        landmarks[start].y * ctx.canvas.height
+      )
+      ctx.lineTo(
+        landmarks[end].x * ctx.canvas.width,
+        landmarks[end].y * ctx.canvas.height
+      )
+      ctx.stroke()
+    }
+  }
+
+  const drawLandmarks = (ctx, landmarks, style) => {
+    ctx.fillStyle = style.color
+
+    for (const landmark of landmarks) {
+      ctx.beginPath()
+      ctx.arc(
+        landmark.x * ctx.canvas.width,
+        landmark.y * ctx.canvas.height,
+        style.radius,
+        0,
+        2 * Math.PI
+      )
+      ctx.fill()
+    }
+  }
+
+  // Hand connections (simplified - MediaPipe has 21 landmarks)
+  const HAND_CONNECTIONS = [
+    [0, 1], [1, 2], [2, 3], [3, 4], // Thumb
+    [0, 5], [5, 6], [6, 7], [7, 8], // Index
+    [5, 9], [9, 10], [10, 11], [11, 12], // Middle
+    [9, 13], [13, 14], [14, 15], [15, 16], // Ring
+    [13, 17], [17, 18], [18, 19], [19, 20], // Pinky
+    [0, 17] // Palm
+  ]
 
   const handleCategoryClick = (category) => {
     setSelectedCategory(category)
@@ -361,11 +492,11 @@ export default function Vocabulary() {
   const renderPagination = () => {
     const pages = []
     const maxVisiblePages = 5
-    
+
     // Previous button
     pages.push(
-      <button 
-        key="prev" 
+      <button
+        key="prev"
         onClick={() => handlePageChange(currentPage - 1)}
         disabled={currentPage === 1}
         className="page-btn"
@@ -377,7 +508,7 @@ export default function Vocabulary() {
     // Page numbers
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
-    
+
     if (endPage - startPage < maxVisiblePages - 1) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1)
     }
@@ -396,8 +527,8 @@ export default function Vocabulary() {
 
     // Next button
     pages.push(
-      <button 
-        key="next" 
+      <button
+        key="next"
         onClick={() => handlePageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
         className="page-btn"
@@ -449,7 +580,7 @@ export default function Vocabulary() {
             className="search-input"
           />
           {searchQuery && (
-            <button 
+            <button
               className="clear-search"
               onClick={() => {
                 setSearchQuery('')
@@ -519,7 +650,7 @@ export default function Vocabulary() {
                   </button>
                 ))}
               </div>
-              
+
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="pagination">
@@ -535,7 +666,7 @@ export default function Vocabulary() {
                 <div className="box-title">Sign Demonstration</div>
                 <div className="gif-area">
                   {selectedWord ? (
-                    <img 
+                    <img
                       src={`/HKSLLEX-video-2023-webp/HKSLLEX-2023-${selectedWord.id.padStart(8, '0')}-${selectedWord.word}.webp`}
                       alt={selectedWord.word}
                       className="sign-video"
@@ -548,7 +679,7 @@ export default function Vocabulary() {
                   ) : (
                     <div className="placeholder-text">Select a word to view sign</div>
                   )}
-                  <div className="placeholder-text" style={{display: 'none'}}>
+                  <div className="placeholder-text" style={{ display: 'none' }}>
                     Video not available
                   </div>
                 </div>
@@ -558,8 +689,8 @@ export default function Vocabulary() {
                     <div className="translation">ID: {selectedWord.id}</div>
                     {/* Navigation Buttons */}
                     <div className="demo-nav-buttons">
-                      <button 
-                        className="nav-btn prev" 
+                      <button
+                        className="nav-btn prev"
                         onClick={() => {
                           if (selectedWord) {
                             const currentIndex = currentCategoryData.words.findIndex(w => w.id === selectedWord.id)
@@ -572,8 +703,8 @@ export default function Vocabulary() {
                       >
                         Previous
                       </button>
-                      <button 
-                        className="nav-btn next" 
+                      <button
+                        className="nav-btn next"
                         onClick={() => {
                           if (selectedWord) {
                             const currentIndex = currentCategoryData.words.findIndex(w => w.id === selectedWord.id)
@@ -594,15 +725,45 @@ export default function Vocabulary() {
           )}
 
           {/* Camera Box - Always rendered, but hidden when not in demo view */}
-          <div className="vocab-card cam-box" style={{display: showDemo ? 'block' : 'none'}}>
-            <div className="box-title">Your Sign (Camera)</div>
-            <div className="cam-wrap">
-              <video ref={videoRef} autoPlay playsInline muted className={cameraAllowed ? 'live' : 'hidden'} />
+          <div className="vocab-card cam-box" style={{ display: showDemo ? 'block' : 'none' }}>
+            <div className="box-title">
+              Your Sign (Camera)
+              {detectedGesture && <span style={{ marginLeft: '10px', fontSize: '14px', color: '#4CAF50' }}>• {detectedGesture}</span>}
+            </div>
+            <div className="cam-wrap" style={{ position: 'relative' }}>
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                style={{ display: 'none' }}
+              />
+              <canvas
+                ref={canvasRef}
+                width={1280}
+                height={720}
+                className={cameraAllowed ? 'live' : 'hidden'}
+                style={{ width: '100%', height: 'auto' }}
+              />
               {!cameraAllowed && (
                 <div className="cam-placeholder">
-                  <div style={{fontSize:28}}>📷</div>
+                  <div style={{ fontSize: 28 }}>📷</div>
                   <div>Camera Feed</div>
                   <small>Allow camera to practice</small>
+                </div>
+              )}
+              {handLandmarks && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: '10px',
+                  left: '10px',
+                  background: 'rgba(0,0,0,0.7)',
+                  color: 'white',
+                  padding: '8px 12px',
+                  borderRadius: '4px',
+                  fontSize: '12px'
+                }}>
+                  Hands detected: {handLandmarks.length}
                 </div>
               )}
             </div>

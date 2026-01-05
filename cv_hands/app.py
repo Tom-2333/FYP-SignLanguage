@@ -17,83 +17,34 @@ import os
 from model import KeyPointClassifier, KeyPointSequenceClassifier
 from utils import CvFpsCalc
 
-# Maximum rows per Words-Dataset CSV
-WORDS_DATASET_ROW_LIMIT = 1000
 
+def draw_chinese_text(image, text, position, font_size=20, color=(255, 255, 255), bold=False):
 
-def draw_chinese_text(image, text, position, font_size=20, color=(255, 255, 255), bold=False, anchor='lt', stroke_width=0, stroke_fill=None):
-    """
-    Render text (Chinese/English) using PIL so both languages share the same positioning and
-    support stroke/outline via `stroke_width` and `stroke_fill`.
-
-    - `position`: tuple of (x,y) either absolute pixels or normalized floats in [0,1].
-    - `color`: BGR tuple (OpenCV convention). Converted to RGB for PIL.
-    - `stroke_fill`: BGR tuple for stroke color or None.
-    """
-    # Normalize position if given as normalized floats
-    try:
-        image_width, image_height = image.shape[1], image.shape[0]
-        if isinstance(position, (tuple, list)) and len(position) == 2 and \
-           any(isinstance(v, float) and 0.0 <= v <= 1.0 for v in position):
-            px = int(position[0] * image_width)
-            py = int(position[1] * image_height)
-            position = (px, py)
-    except Exception:
-        pass
-
-    # Convert to PIL image and draw
     image_pil = Image.fromarray(cv.cvtColor(image, cv.COLOR_BGR2RGB))
     draw = ImageDraw.Draw(image_pil)
 
-    # Load font (try common Chinese fonts, fallback to default)
     try:
-        font = ImageFont.truetype("C:\\Windows\\Fonts\\msyh.ttc", font_size)
-    except Exception:
+        font = ImageFont.truetype("/System/Library/Fonts/PingFang.ttc", font_size)
+    except:
         try:
-            font = ImageFont.truetype("C:\\Windows\\Fonts\\simhei.ttf", font_size)
-        except Exception:
-            font = ImageFont.load_default()
+            font = ImageFont.truetype("/System/Library/Fonts/STHeiti Light.ttc", font_size)
+        except:
+            try:
+                font = ImageFont.truetype("/System/Library/Fonts/Hiragino Sans GB.ttc", font_size)
+            except:
+                try:
+                    font = ImageFont.truetype("C:\\Windows\\Fonts\\msyh.ttc", font_size)
+                except:
+                    try:
+                        font = ImageFont.truetype("C:\\Windows\\Fonts\\simhei.ttf", font_size)
+                    except:
+                        font = ImageFont.load_default()
 
-    # Convert BGR color to RGB for PIL
-    try:
-        pil_fill = (color[2], color[1], color[0]) if isinstance(color, (list, tuple)) and len(color) >= 3 else color
-    except Exception:
-        pil_fill = color
-
-    try:
-        pil_stroke = (stroke_fill[2], stroke_fill[1], stroke_fill[0]) if stroke_fill and isinstance(stroke_fill, (list, tuple)) and len(stroke_fill) >= 3 else stroke_fill
-    except Exception:
-        pil_stroke = stroke_fill
-
-    # Compute anchor adjustments using text bbox
-    try:
-        bbox = draw.textbbox((0, 0), text, font=font, stroke_width=stroke_width)
-        text_w = bbox[2] - bbox[0]
-        text_h = bbox[3] - bbox[1]
-        x, y = position
-        a = (anchor or 'lt').lower()
-        if a in ('center', 'c'):
-            x = int(x - text_w / 2)
-            y = int(y - text_h / 2)
-        elif a in ('rt', 'tr', 'right-top'):
-            x = int(x - text_w)
-        elif a in ('lb', 'bl', 'left-bottom'):
-            y = int(y - text_h)
-        elif a in ('rb', 'br', 'right-bottom'):
-            x = int(x - text_w)
-            y = int(y - text_h)
-        pos_to_draw = (x, y)
-    except Exception:
-        pos_to_draw = position
-
-    # Draw bold by using stroke or slight offset drawing
-    if bold and stroke_width <= 0:
-        # emulate bold by drawing multiple offsets
-        offsets = [(0, 0), (1, 0), (0, 1)]
-        for dx, dy in offsets:
-            draw.text((pos_to_draw[0] + dx, pos_to_draw[1] + dy), text, font=font, fill=pil_fill, stroke_width=stroke_width, stroke_fill=pil_stroke)
+    if bold:
+        draw.text(position, text, font=font, fill=color)
+        draw.text((position[0] + 1, position[1]), text, font=font, fill=color)
     else:
-        draw.text(pos_to_draw, text, font=font, fill=pil_fill, stroke_width=stroke_width, stroke_fill=pil_stroke)
+        draw.text(position, text, font=font, fill=color)
 
     image_cv = cv.cvtColor(np.array(image_pil), cv.COLOR_RGB2BGR)
     return image_cv
@@ -103,14 +54,14 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--device", type=int, default=0)
-    parser.add_argument("--width", help='cap width', type=int, default=640)  # Reduced from 960
-    parser.add_argument("--height", help='cap height', type=int, default=480)  # Reduced from 540
+    parser.add_argument("--width", help='cap width', type=int, default=960)
+    parser.add_argument("--height", help='cap height', type=int, default=540)
 
     parser.add_argument('--use_static_image_mode', action='store_true')
     parser.add_argument("--min_detection_confidence",
                         help='min_detection_confidence',
                         type=float,
-                        default=0.5)  # Reduced from 0.7 for faster detection
+                        default=0.7)
     parser.add_argument("--min_tracking_confidence",
                         help='min_tracking_confidence',
                         type=float,
@@ -150,7 +101,6 @@ def main():
         max_num_hands=2, # detects the number of hands in the program
         min_detection_confidence=min_detection_confidence,
         min_tracking_confidence=min_tracking_confidence,
-        model_complexity=0,  # Use lighter model (0=lite, 1=full)
     )
 
     face_mesh = mp_face_mesh.FaceMesh(
@@ -218,46 +168,34 @@ def main():
     number = -1
     input_state = 0  # 0: idle, 1: inputting number, 2: number confirmed
     continuous_logging = False
-    # New flags: after confirming number user can press Space once to capture (single-shot)
-    ready_to_capture = False
-    capture_once = False
-    # Timed capture window: when Space pressed, capture continuously until this timestamp
-    capture_end_time = 0.0
-    capture_duration = 40.0  # seconds to capture after Space (adjustable)
-    # Capture mode: 'timed' (default) or 'count' (capture N frames)
-    capture_mode = 'timed'
-    # Count-mode variables
-    capture_target_frames = 0
-    capture_count_input = ''
-    setting_capture_count = False
-    capture_count_active = False
-    capture_frames_collected = 0
+    space_pressed = False
+    auto_mode = False
 
     while True:
         fps = cvFpsCalc.get()
 
-        # Initialize gesture variables at the start of each frame
+        # Initialize sequence gesture variables
         sequence_gesture_id = 0
         sequence_gesture_confidence = 0.0
-        sequence_gesture_label = ""
 
-        # Process Key (ESC: end or cancel training mode)
+        # Process Key (ESC: end)
         key = cv.waitKey(10)
         if key == 27:  # ESC
-            # If currently in training mode, cancel training and return to normal mode
-            if mode in (1, 3) or input_state != 0 or ready_to_capture:
-                mode = 0
-                input_state = 0
-                number = -1
-                number_input = ""
-                continuous_logging = False
-                ready_to_capture = False
-                capture_once = False
-                print("Exited training mode (ESC)")
-            else:
-                break
+            break
         if key != -1:  # Any key pressed
             print(f"Key pressed: {key} (char: {chr(key) if 32 <= key <= 126 else 'non-printable'})")
+
+        # Handle space key for continuous logging while pressed
+        if input_state == 2:
+            if key == 32:  # Space
+                if not space_pressed:
+                    space_pressed = True
+                    continuous_logging = True
+                    print("Continuous logging started while space is pressed.")
+            elif key != 32 and space_pressed and not auto_mode:
+                space_pressed = False
+                continuous_logging = False
+                print("Continuous logging stopped.")
 
         # Handle key input based on state
         log_this_frame = False
@@ -267,8 +205,8 @@ def main():
             number_input = ""
             number = -1
             continuous_logging = False
-            ready_to_capture = False
-            capture_once = False
+            space_pressed = False
+            auto_mode = False
             print("Mode changed to 1 (Logging Keypoints). Enter class number:")
             print("Available labels:")
             for i, label in enumerate(keypoint_classifier_labels, 1):
@@ -279,8 +217,8 @@ def main():
             number_input = ""
             number = -1
             continuous_logging = False
-            ready_to_capture = False
-            capture_once = False
+            space_pressed = False
+            auto_mode = False
             print("Mode changed to 3 (Logging Sequence). Enter class number:")
             print("Available labels:")
             for i, label in enumerate(keypoint_sequence_classifier_labels, 1):
@@ -290,12 +228,16 @@ def main():
             input_state = 0
             number = -1
             continuous_logging = False
+            space_pressed = False
+            auto_mode = False
             print("Mode changed to 0 (Normal)")
         elif key == ord('o'):
             mode = 4
             input_state = 0
             number = -1
             continuous_logging = False
+            space_pressed = False
+            auto_mode = False
             print("Mode changed to 4 (Timed Gesture Detection)")
         elif input_state == 1:  # Inputting number
             if 48 <= key <= 57:  # 0-9
@@ -305,61 +247,15 @@ def main():
                 if number_input:
                     number = int(number_input)
                     input_state = 2
-                    # switch to ready-to-capture single-shot mode
-                    ready_to_capture = True
-                    capture_once = False
-                    print(f"Number confirmed: {number}. Now press Space once to capture the data.")
+                    print(f"Number confirmed: {number}. Press Space to start continuous logging.")
             elif key == 8:  # Backspace
                 number_input = number_input[:-1]
                 print(f"Number input: {number_input}")
-        elif input_state == 2:  # Number confirmed, ready to capture
-            # Keys to configure capture mode and target when in capture-ready state:
-            # - 'm' : toggle capture_mode between 'timed' and 'count'
-            # - 'g' : enter capture-target setting (digits then Enter)
-            if key == ord('m'):
-                capture_mode = 'count' if capture_mode == 'timed' else 'timed'
-                print(f"Capture mode: {capture_mode}")
-            elif key == ord('g'):
-                setting_capture_count = True
-                capture_count_input = ''
-                print('Enter target frame count (digits), then press Enter')
-            elif setting_capture_count:
-                # While setting capture count, accept digits and Enter
-                if 48 <= key <= 57:  # 0-9
-                    capture_count_input += chr(key)
-                    print(f"Target frames: {capture_count_input}")
-                elif key == 13:  # Enter
-                    try:
-                        capture_target_frames = int(capture_count_input) if capture_count_input else 0
-                    except ValueError:
-                        capture_target_frames = 0
-                    setting_capture_count = False
-                    print(f"Set capture_target_frames = {capture_target_frames}")
-            elif key == 32 and ready_to_capture:  # Space
-                # Start capture according to selected mode
-                if capture_mode == 'timed':
-                    capture_end_time = time.time() + capture_duration
-                    continuous_logging = True
-                    capture_once = False
-                    ready_to_capture = False
-                    capture_count_active = False
-                    print(f"Space pressed — capturing for {capture_duration} seconds for this class.")
-                else:  # 'count' mode
-                    if capture_target_frames > 0:
-                        continuous_logging = True
-                        capture_frames_collected = 0
-                        capture_count_active = True
-                        capture_once = False
-                        ready_to_capture = False
-                        print(f"Space pressed — capturing {capture_target_frames} frames for this class.")
-                    else:
-                        print('Capture target frames not set (press g then digits then Enter to set).')
-
-        # If a timed capture window expired, stop continuous logging
-        if continuous_logging and capture_end_time > 0 and time.time() > capture_end_time:
-            continuous_logging = False
-            capture_end_time = 0.0
-            print("Timed capture window ended.")
+        elif input_state == 2:  # Number confirmed, ready to log
+            if key == ord('c'):
+                continuous_logging = True
+                auto_mode = True
+                print("Auto continuous logging started.")
 
         if mode != previous_mode:
             if mode == 4:
@@ -428,35 +324,9 @@ def main():
                 if (mode == 4 and sequence_started) or (mode != 4 and True):  # Always append for non-4 modes when hand detected
                     keypoint_sequence.append(pre_processed_landmark_list)
 
-                # Logging data: support single-shot capture (`capture_once`) or legacy continuous mode
-                if (capture_once or continuous_logging) and input_state == 2 and number >= 0:
-                    # For sequence mode (mode==3) ensure enough frames collected
-                    if mode == 3:
-                        if len(keypoint_sequence) >= sequence_length:
-                            logging_csv(number, mode, pre_processed_landmark_list, keypoint_sequence, sequence_length)
-                            if capture_once:
-                                capture_once = False
-                            # If in count-mode, update collected counter and stop when reached
-                            if capture_count_active:
-                                capture_frames_collected += 1
-                                if capture_frames_collected >= capture_target_frames:
-                                    continuous_logging = False
-                                    capture_count_active = False
-                                    print('Capture: reached target frames')
-                        else:
-                            # not enough frames yet; will wait until sequence fills
-                            pass
-                    else:
-                        # mode 1: log single-frame keypoint
-                        logging_csv(number, mode, pre_processed_landmark_list, keypoint_sequence, sequence_length)
-                        if capture_once:
-                            capture_once = False
-                        if capture_count_active:
-                            capture_frames_collected += 1
-                            if capture_frames_collected >= capture_target_frames:
-                                continuous_logging = False
-                                capture_count_active = False
-                                print('Capture: reached target frames')
+                # Logging data when continuous logging is enabled
+                if continuous_logging and input_state == 2 and number >= 0:
+                    logging_csv(number, mode, pre_processed_landmark_list, keypoint_sequence, sequence_length)
 
                 # Drawing part
                 debug_image = draw_bounding_rect(use_brect, debug_image, brect)
@@ -465,7 +335,7 @@ def main():
                 debug_image = draw_pose_landmarks(debug_image, pose_landmarks)
 
 
-                if hand_sign_confidence > 0.6:  # Lowered threshold for better responsiveness
+                if hand_sign_confidence > 0.8:
                     hand_sign_label = f"{keypoint_classifier_labels[hand_sign_id - 1] if hand_sign_id - 1 < len(keypoint_classifier_labels) else str(hand_sign_id)} ({hand_sign_confidence*100:.0f}%)"
                 else:
                     hand_sign_label = "不確定"
@@ -480,10 +350,13 @@ def main():
                     direction_labels = ["北", "東北", "東", "東南", "南", "西南", "西", "西北"]
                     auxiliary_info += f"方向:{direction_labels[direction_id] if direction_id < len(direction_labels) else str(direction_id)}"
 
-                if mode == 4 and start_time_4 > 0 and hand_sign_confidence > 0.6:  # Lowered threshold
+                if mode == 4 and start_time_4 > 0 and hand_sign_confidence > 0.8:
                     gestures_4.append(hand_sign_id)
 
-                # Update sequence gesture label in real-time (removed duplicate logic)
+                if sequence_gesture_confidence > 0.8:
+                    sequence_gesture_label = f"{keypoint_sequence_classifier_labels[sequence_gesture_id - 1] if sequence_gesture_id - 1 < len(keypoint_sequence_classifier_labels) else str(sequence_gesture_id)} ({sequence_gesture_confidence*100:.0f}%)"
+                else:
+                    sequence_gesture_label = ""
 
                 # Print detected results to terminal
                 # print(f"Detected: Hand Sign: {hand_sign_label}, {auxiliary_info.strip()}, Sequence: {sequence_gesture_label}")
@@ -508,53 +381,25 @@ def main():
                 last = seq[-1]
                 seq.extend([last] * (sequence_length - len(seq)))
             sequence_gesture_id, sequence_gesture_confidence = keypoint_sequence_classifier(seq)
-        
-            # Update sequence gesture label based on confidence
-            if sequence_gesture_confidence > 0.6:  # Lowered threshold for better responsiveness
-                sequence_gesture_label = f"{keypoint_sequence_classifier_labels[sequence_gesture_id - 1] if sequence_gesture_id - 1 < len(keypoint_sequence_classifier_labels) else str(sequence_gesture_id)} ({sequence_gesture_confidence*100:.0f}%)"
-            else:
-                sequence_gesture_label = "不確定"
 
         # Calculates the gesture IDs in the latest detection
         sequence_gesture_history.append(sequence_gesture_id)
         most_common_sg_id = Counter(
             sequence_gesture_history).most_common()
 
+        if sequence_gesture_confidence > 0.8:
+            sequence_gesture_label = f"{keypoint_sequence_classifier_labels[sequence_gesture_id - 1] if sequence_gesture_id - 1 < len(keypoint_sequence_classifier_labels) else str(sequence_gesture_id)} ({sequence_gesture_confidence*100:.0f}%)"
+        else:
+            sequence_gesture_label = "不確定"
+
         current_sequence_gesture = sequence_gesture_label
 
         debug_image = draw_point_history(debug_image, point_history)
 
-        # Always display sequence gesture if available (single, flexible position)
+        # Always display sequence gesture if available
         if current_sequence_gesture != "":
-            # Use normalized coordinates (2% from left, 18% from top) and anchor left-top
-            # Single call: yellow text with black stroke outline so English/Chinese share same position
-                debug_image = draw_chinese_text(
-                debug_image,
-                "Sequence:" + current_sequence_gesture,
-                (0.02, 0.18),
-                font_size=32,
-                color=(0, 255, 255),
-                bold=True,
-                anchor='lt',
-                stroke_width=2,
-                stroke_fill=(0, 0, 0),
-            )
-
-        # If user confirmed a class number and is ready, show capture instruction
-        if ready_to_capture:
-            mode_label = f"Mode:{capture_mode}"
-            if capture_mode == 'count' and capture_target_frames > 0:
-                mode_label += f"({capture_target_frames})"
-            debug_image = draw_chinese_text(debug_image, "Press SPACE to capture - " + mode_label, (10, 140), font_size=18, color=(255, 0, 0), bold=True)
-
-        # If currently capturing, show countdown or remaining frames
-        if continuous_logging:
-            if capture_mode == 'timed' and capture_end_time > 0:
-                remaining = max(0.0, capture_end_time - time.time())
-                debug_image = draw_chinese_text(debug_image, f"正在擷取: {remaining:.1f}s", (0.02, 0.06), font_size=20, color=(0, 255, 255), bold=True, stroke_width=2, stroke_fill=(0,0,0))
-            elif capture_mode == 'count' and capture_count_active:
-                remaining_frames = max(0, capture_target_frames - capture_frames_collected)
-                debug_image = draw_chinese_text(debug_image, f"正在擷取: {remaining_frames} frames", (0.02, 0.06), font_size=20, color=(0, 255, 255), bold=True, stroke_width=2, stroke_fill=(0,0,0))
+            debug_image = draw_chinese_text(debug_image, "Sequence Gesture:" + current_sequence_gesture, (10, 70), font_size=35, color=(0, 0, 0), bold=True)
+            debug_image = draw_chinese_text(debug_image, "Sequence Gesture:" + current_sequence_gesture, (10, 70), font_size=35, color=(255, 255, 0), bold=True)
 
         debug_image = draw_info(debug_image, fps, mode, number)
 
@@ -831,6 +676,13 @@ def compute_relative_positions(hand_landmarks, face_features, pose_features, ima
 
 def pre_process_landmark(landmark_list, face_landmarks=None, pose_landmarks=None, image=None, use_legacy_mode=False):
     temp_landmark_list = copy.deepcopy(landmark_list)
+
+    # Extract face and pose features
+    face_features = extract_face_features(face_landmarks, image)
+    pose_features = extract_pose_features(pose_landmarks, image)
+
+    # Compute relative positions
+    relative_features = compute_relative_positions(temp_landmark_list, face_features, pose_features, image)
 
     # Convert hand landmarks to relative coordinates
     base_x, base_y = 0, 0
@@ -1219,8 +1071,8 @@ def draw_info_text(image, brect, handedness, hand_sign_text,
         image = draw_chinese_text(image, finger_gesture_text, (10, 40), font_size=20, color=(255, 255, 255))
 
     if sequence_gesture_text != "":
-        # Sequence gesture display moved to main loop to avoid duplicate drawing and position conflicts
-        pass
+        image = draw_chinese_text(image, "Sequence Gesture:" + sequence_gesture_text, (10, 70), font_size=35, color=(0, 0, 0), bold=True)
+        image = draw_chinese_text(image, "Sequence Gesture:" + sequence_gesture_text, (10, 70), font_size=35, color=(255, 255, 0), bold=True)
 
     return image
 
