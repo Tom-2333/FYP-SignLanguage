@@ -769,7 +769,6 @@ export default function Vocabulary() {
             </div>
           </div>
         </main>
-
       </section>
     </div>
   )
