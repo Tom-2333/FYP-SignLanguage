@@ -1,0 +1,35 @@
+SYSTEM REQUIREMENTS
+- Node.js 18.x LTS (includes npm)
+- Python 3.10+ (64-bit, add to PATH)
+- Git (optional)
+- Webcam driver (for cv_hands/app_simple.py)
+
+PYTHON REQUIREMENTS (cv_hands/app_simple.py)
+Install via: pip install -r cv_hands/requirements.txt
+- opencv-python==4.8.0
+- mediapipe==0.10.0
+- numpy==1.24.3
+- pillow==10.0.0
+- tensorflow==2.13.0
+
+REACT REQUIREMENTS (my-app)
+Install via: npm install (run inside my-app/)
+Pulls these versions:
+- @mediapipe/camera_utils@0.3.1675466862
+- @mediapipe/drawing_utils@0.3.1675466124
+- @mediapipe/hands@0.4.1675469240
+- @testing-library/dom@10.4.1
+- @testing-library/jest-dom@6.9.1
+- @testing-library/react@16.3.0
+- @testing-library/user-event@13.5.0
+- react@19.2.0
+- react-dom@19.2.0
+- react-icons@5.5.0
+- react-router-dom@7.9.4
+- react-scripts@5.0.1
+- web-vitals@2.1.4
+
+OPTIONAL: DATABASE/API (SL-Database_api)
+- Apache + PHP (XAMPP/WAMP recommended)
+- MySQL/MariaDB
+- Import database: SL-Database_api/sldb.sql
