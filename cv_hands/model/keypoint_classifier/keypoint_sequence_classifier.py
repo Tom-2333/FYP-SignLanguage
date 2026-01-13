@@ -3,6 +3,7 @@
 import numpy as np
 import tensorflow as tf
 import os
+from pathlib import Path
 
 
 class KeyPointSequenceClassifier(object):
@@ -11,6 +12,9 @@ class KeyPointSequenceClassifier(object):
         model_path='model/keypoint_classifier/keypoint_sequence_classifier.tflite',
         num_threads=1,
     ):
+        if not Path(model_path).is_absolute():
+            cv_hands_dir = Path(__file__).resolve().parents[2]
+            model_path = str(cv_hands_dir / model_path)
         if not os.path.exists(model_path):
             self.interpreter = None
             print(f"Warning: Model file {model_path} not found. Sequence classification will be disabled.")

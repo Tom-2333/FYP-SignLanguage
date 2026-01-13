@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import './vocabulary.css'
 import { Hands } from '@mediapipe/hands'
 import { Camera } from '@mediapipe/camera_utils'
@@ -10,267 +10,11 @@ const getConfidence = (wordId) => {
   return 85 // Hard-coded value for now
 }
 
-// Dictionary data from the file
-const dictionaryData = {
-  'All': {
-    name: 'All Words',
-    words: [] // Will be populated dynamically
-  },
-  'A': {
-    name: 'Emotion / Attitude / Feelings',
-    words: [
-      { id: '002', word: 'Puzzled' },
-      { id: '003', word: 'Surprise' },
-      { id: '006', word: 'Bored' },
-      { id: '010', word: 'Awkward' },
-      { id: '028', word: 'Shy' },
-      { id: '040', word: 'Good' },
-      { id: '042', word: 'Wrong' },
-      { id: '044', word: 'Doubt' },
-      { id: '056', word: 'Angry' },
-      { id: '057', word: 'Serious' },
-      { id: '058', word: 'Sick' },
-      { id: '067', word: 'Important' },
-      { id: '075', word: 'Silly' },
-      { id: '088', word: 'Really' },
-      { id: '112', word: 'Sad' },
-      { id: '134', word: 'Wonder' },
-      { id: '142', word: 'Bad' }
-    ]
-  },
-  'B': {
-    name: 'Person / Family / Social Roles',
-    words: [
-      { id: '051', word: 'Brother' },
-      { id: '052', word: 'Brother' },
-      { id: '053', word: 'Person' },
-      { id: '062', word: 'Father' },
-      { id: '080', word: 'Mother' },
-      { id: '099', word: 'Grandfather' },
-      { id: '100', word: 'Grandfather' },
-      { id: '111', word: 'Boss' },
-      { id: '146', word: 'Son' },
-      { id: '150', word: 'Boy' }
-    ]
-  },
-  'C': {
-    name: 'Actions / Verbs / Activities',
-    words: [
-      { id: '001', word: 'Start' },
-      { id: '008', word: 'Bath' },
-      { id: '013', word: 'Hunt' },
-      { id: '021', word: 'Warn' },
-      { id: '029', word: 'Lookat' },
-      { id: '030', word: 'Learn' },
-      { id: '034', word: 'Print' },
-      { id: '039', word: 'Bake' },
-      { id: '076', word: 'Eat' },
-      { id: '082', word: 'Drink' },
-      { id: '085', word: 'Wait' },
-      { id: '086', word: 'Swallow' },
-      { id: '091', word: 'Subtract' },
-      { id: '092', word: 'Win' },
-      { id: '093', word: 'After' },
-      { id: '094', word: 'Wear' },
-      { id: '096', word: 'Try' },
-      { id: '097', word: 'Try' },
-      { id: '102', word: 'Act' },
-      { id: '103', word: 'Parade' },
-      { id: '104', word: 'Vote' },
-      { id: '106', word: 'Grow' },
-      { id: '114', word: 'Zoomin' },
-      { id: '120', word: 'Dance' },
-      { id: '131', word: 'Sew' },
-      { id: '132', word: 'Decide' },
-      { id: '144', word: 'Leave' },
-      { id: '149', word: 'Travel' }
-    ]
-  },
-  'D': {
-    name: 'Objects / Things / Physical Items',
-    words: [
-      { id: '004', word: 'Hearingaid' },
-      { id: '024', word: 'Flag' },
-      { id: '025', word: 'Film' },
-      { id: '027', word: 'Videophone' },
-      { id: '038', word: 'Pill' },
-      { id: '041', word: 'Hotel' },
-      { id: '049', word: 'Wristwatch' },
-      { id: '050', word: 'Breakdown' },
-      { id: '054', word: 'Bug' },
-      { id: '055', word: 'Salt' },
-      { id: '059', word: 'Cabbage' },
-      { id: '061', word: 'Speakers' },
-      { id: '066', word: 'Certificate' },
-      { id: '090', word: 'Hospital' },
-      { id: '095', word: 'Key' },
-      { id: '113', word: 'Cigar' },
-      { id: '115', word: 'Creditcard' },
-      { id: '137', word: 'Hairdryer' },
-      { id: '141', word: 'Blinds' }
-    ]
-  },
-  'E': {
-    name: 'Abstract / Concepts / Relations',
-    words: [
-      { id: '007', word: 'Responsibili' },
-      { id: '011', word: 'Relationship' },
-      { id: '012', word: 'Favorite' },
-      { id: '020', word: 'Impossible' },
-      { id: '026', word: 'Last' },
-      { id: '035', word: 'Mind' },
-      { id: '036', word: 'Body' },
-      { id: '037', word: 'Because' },
-      { id: '043', word: 'Type' },
-      { id: '045', word: 'Judge' },
-      { id: '046', word: 'Patient' },
-      { id: '047', word: 'Much' },
-      { id: '065', word: 'Nothing' },
-      { id: '069', word: 'Freckles' },
-      { id: '070', word: 'Engagement' },
-      { id: '071', word: 'Engagement' },
-      { id: '074', word: 'Peace' },
-      { id: '077', word: 'Possible' },
-      { id: '083', word: 'Scarcely' },
-      { id: '119', word: 'Government' },
-      { id: '121', word: 'Experience' },
-      { id: '122', word: 'Experience' },
-      { id: '123', word: 'Wet' },
-      { id: '124', word: 'Disagreement' },
-      { id: '126', word: 'Lookappearan' },
-      { id: '127', word: 'Mean' },
-      { id: '128', word: 'New' },
-      { id: '129', word: 'Age' },
-      { id: '130', word: 'About' },
-      { id: '133', word: 'Stress' },
-      { id: '135', word: 'Pile' },
-      { id: '136', word: 'Pile' },
-      { id: '143', word: 'Health' },
-      { id: '148', word: 'Character' }
-    ]
-  },
-  'F': {
-    name: 'Places / Locations',
-    words: [
-      { id: '017', word: 'City' },
-      { id: '018', word: 'City2' },
-      { id: '022', word: 'Newyork' },
-      { id: '041', word: 'Hotel' },
-      { id: '072', word: 'Farm' },
-      { id: '090', word: 'Hospital' }
-    ]
-  },
-  'G': {
-    name: 'Time / Days / Units / Seasons',
-    words: [
-      { id: '032', word: 'Three' },
-      { id: '033', word: 'Three' },
-      { id: '060', word: 'Minute' },
-      { id: '084', word: 'Year' },
-      { id: '087', word: 'Friday' },
-      { id: '101', word: 'Summer' },
-      { id: '109', word: 'Thursday' },
-      { id: '138', word: 'Week' },
-      { id: '139', word: 'Week' },
-      { id: '140', word: 'Time' },
-      { id: '147', word: 'Sunset' }
-    ]
-  },
-  'H': {
-    name: 'Colors / Appearance / Physical Traits',
-    words: [
-      { id: '069', word: 'Freckles' },
-      { id: '078', word: 'Black' },
-      { id: '125', word: 'Purple' },
-      { id: '145', word: 'Green' },
-      { id: '126', word: 'Lookappearan' }
-    ]
-  },
-  'I': {
-    name: 'Food / Taste',
-    words: [
-      { id: '039', word: 'Bake' },
-      { id: '055', word: 'Salt' },
-      { id: '059', word: 'Cabbage' },
-      { id: '068', word: 'Delicious' }
-    ]
-  },
-  'J': {
-    name: 'Health / Medical / Disability',
-    words: [
-      { id: '004', word: 'Hearingaid' },
-      { id: '005', word: 'Blind' },
-      { id: '015', word: 'Headache' },
-      { id: '058', word: 'Sick' },
-      { id: '090', word: 'Hospital' },
-      { id: '143', word: 'Health' }
-    ]
-  },
-  'K': {
-    name: 'Quantifiers / Numerals / Determiners / Question Words',
-    words: [
-      { id: '009', word: 'Some' },
-      { id: '032', word: 'Three' },
-      { id: '033', word: 'Three' },
-      { id: '047', word: 'Much' },
-      { id: '048', word: '5dollars' },
-      { id: '065', word: 'Nothing' },
-      { id: '073', word: 'Which' },
-      { id: '098', word: 'Where' },
-      { id: '130', word: 'About' }
-    ]
-  },
-  'L': {
-    name: 'Devices / Technology / Media',
-    words: [
-      { id: '004', word: 'Hearingaid' },
-      { id: '025', word: 'Film' },
-      { id: '027', word: 'Videophone' },
-      { id: '049', word: 'Wristwatch' },
-      { id: '061', word: 'Speakers' },
-      { id: '115', word: 'Creditcard' },
-      { id: '137', word: 'Hairdryer' }
-    ]
-  },
-  'M': {
-    name: 'Events / Accidents / Celebrations',
-    words: [
-      { id: '089', word: 'Congratulati' },
-      { id: '116', word: 'Accident' },
-      { id: '117', word: 'Accident' },
-      { id: '118', word: 'Accident' }
-    ]
-  },
-  'N': {
-    name: 'Variants / Duplicates / Uncertain',
-    words: [
-      { id: '032', word: 'Three' },
-      { id: '033', word: 'Three' },
-      { id: '051', word: 'Brother' },
-      { id: '052', word: 'Brother' },
-      { id: '067', word: 'Important' },
-      { id: '069', word: 'Freckles' },
-      { id: '070', word: 'Engagement' },
-      { id: '071', word: 'Engagement' },
-      { id: '084', word: 'Year' },
-      { id: '099', word: 'Grandfather' },
-      { id: '100', word: 'Grandfather' },
-      { id: '116', word: 'Accident' },
-      { id: '117', word: 'Accident' },
-      { id: '118', word: 'Accident' },
-      { id: '121', word: 'Experience' },
-      { id: '122', word: 'Experience' },
-      { id: '135', word: 'Pile' },
-      { id: '136', word: 'Pile' },
-      { id: '138', word: 'Week' },
-      { id: '139', word: 'Week' }
-    ]
-  }
-}
-
 export default function Vocabulary() {
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
+  const handsRef = useRef(null)
+  const cameraRef = useRef(null)
   const [cameraAllowed, setCameraAllowed] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [currentPage, setCurrentPage] = useState(1)
@@ -279,99 +23,66 @@ export default function Vocabulary() {
   const [searchQuery, setSearchQuery] = useState('') // Search query state
   const [showSuggestions, setShowSuggestions] = useState(false) // Show search suggestions
   const [detectedGesture, setDetectedGesture] = useState('') // Detected hand gesture
+  const [gestureData, setGestureData] = useState({}) // Detailed gesture data from Python API
   const [handLandmarks, setHandLandmarks] = useState(null) // Hand landmarks data
+  const [dictionaryData, setDictionaryData] = useState({}) // Dictionary data fetched from API
+  const [gestureServiceOnline, setGestureServiceOnline] = useState(false) // Python service reachability
+  const frameThrottleRef = useRef(0) // Throttle MediaPipe frames to lower CPU
   const userName = localStorage.getItem('userName') || 'User'
   const wordsPerPage = 10
 
-  const categoryKeys = Object.keys(dictionaryData)
+  // CRA (react-scripts) does not automatically serve MediaPipe's WASM/asset files from node_modules.
+  // Without a proper locateFile, MediaPipe will request assets from your app origin and often get
+  // index.html ("<"), causing "Unexpected token '<'" runtime errors.
+  const MEDIAPIPE_HANDS_VERSION = '0.4.1675469240'
 
-  // Create All category with all words from other categories
-  const allWords = categoryKeys
-    .filter(key => key !== 'All')
-    .flatMap(key => dictionaryData[key].words)
+  // Hand connections (simplified - MediaPipe has 21 landmarks)
+  const HAND_CONNECTIONS = [
+    [0, 1], [1, 2], [2, 3], [3, 4], // Thumb
+    [0, 5], [5, 6], [6, 7], [7, 8], // Index
+    [5, 9], [9, 10], [10, 11], [11, 12], // Middle
+    [9, 13], [13, 14], [14, 15], [15, 16], // Ring
+    [13, 17], [17, 18], [18, 19], [19, 20], // Pinky
+    [0, 17] // Palm
+  ]
 
-  const currentCategoryData = selectedCategory === 'All'
-    ? { name: 'All Words', words: allWords }
-    : dictionaryData[selectedCategory]
+  // Helper functions for drawing (simplified versions)
+  const drawConnectors = (ctx, landmarks, connections, style) => {
+    ctx.strokeStyle = style.color
+    ctx.lineWidth = style.lineWidth
 
-  // Filter words based on search query
-  const filteredWords = currentCategoryData.words.filter(word =>
-    word.word.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  const totalWords = filteredWords.length
-  const totalPages = Math.ceil(totalWords / wordsPerPage)
-
-  // Get words for current page
-  const startIndex = (currentPage - 1) * wordsPerPage
-  const endIndex = startIndex + wordsPerPage
-  const currentWords = filteredWords.slice(startIndex, endIndex)
-
-  useEffect(() => {
-    // request camera when component mounts
-    const start = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: 'user',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          }
-        })
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-          // Wait for metadata and play
-          await videoRef.current.play()
-        }
-        setCameraAllowed(true)
-
-        // Initialize MediaPipe Hands
-        const hands = new Hands({
-          locateFile: (file) => {
-            return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-          }
-        })
-
-        hands.setOptions({
-          maxNumHands: 2,
-          modelComplexity: 1,
-          minDetectionConfidence: 0.7,
-          minTrackingConfidence: 0.5
-        })
-
-        hands.onResults(onHandsResults)
-
-        // Start camera processing
-        if (videoRef.current) {
-          const camera = new Camera(videoRef.current, {
-            onFrame: async () => {
-              if (videoRef.current) {
-                await hands.send({ image: videoRef.current })
-              }
-            },
-            width: 1280,
-            height: 720
-          })
-          camera.start()
-        }
-      } catch (err) {
-        console.error('Camera error:', err)
-        setCameraAllowed(false)
-      }
+    for (const connection of connections) {
+      const [start, end] = connection
+      ctx.beginPath()
+      ctx.moveTo(
+        (1 - landmarks[start].x) * ctx.canvas.width,
+        landmarks[start].y * ctx.canvas.height
+      )
+      ctx.lineTo(
+        (1 - landmarks[end].x) * ctx.canvas.width,
+        landmarks[end].y * ctx.canvas.height
+      )
+      ctx.stroke()
     }
-    start()
+  }
 
-    return () => {
-      // stop tracks on unmount
-      const video = videoRef.current
-      if (video && video.srcObject) {
-        const tracks = video.srcObject.getTracks()
-        tracks.forEach(t => t.stop())
-      }
+  const drawLandmarks = (ctx, landmarks, style) => {
+    ctx.fillStyle = style.color
+
+    for (const landmark of landmarks) {
+      ctx.beginPath()
+      ctx.arc(
+        (1 - landmark.x) * ctx.canvas.width,
+        landmark.y * ctx.canvas.height,
+        style.radius,
+        0,
+        2 * Math.PI
+      )
+      ctx.fill()
     }
-  }, [])
+  }
 
-  const onHandsResults = (results) => {
+  const onHandsResults = useCallback((results) => {
     // Save canvas reference
     const canvas = canvasRef.current
     if (!canvas) return
@@ -385,7 +96,10 @@ export default function Vocabulary() {
 
     // Draw the video frame
     if (results.image) {
-      canvasCtx.drawImage(results.image, 0, 0, canvas.width, canvas.height)
+      canvasCtx.save()
+      canvasCtx.scale(-1, 1)
+      canvasCtx.drawImage(results.image, -canvas.width, 0, canvas.width, canvas.height)
+      canvasCtx.restore()
     }
 
     // Draw hand landmarks if detected
@@ -418,53 +132,229 @@ export default function Vocabulary() {
     }
 
     canvasCtx.restore()
-  }
+  }, [HAND_CONNECTIONS, drawConnectors, drawLandmarks])
 
-  // Helper functions for drawing (simplified versions)
-  const drawConnectors = (ctx, landmarks, connections, style) => {
-    ctx.strokeStyle = style.color
-    ctx.lineWidth = style.lineWidth
 
-    for (const connection of connections) {
-      const [start, end] = connection
-      ctx.beginPath()
-      ctx.moveTo(
-        landmarks[start].x * ctx.canvas.width,
-        landmarks[start].y * ctx.canvas.height
-      )
-      ctx.lineTo(
-        landmarks[end].x * ctx.canvas.width,
-        landmarks[end].y * ctx.canvas.height
-      )
-      ctx.stroke()
+  // Fetch dictionary data from XAMPP API
+  useEffect(() => {
+    let active = true
+    const fetchData = async () => {
+      try {
+        const response = await fetch('http://localhost/SL-Database_api/get_words.php')
+        if (!response.ok) throw new Error('Failed to fetch data')
+        const data = await response.json()
+        if (active) setDictionaryData(data)
+      } catch (error) {
+        if (error.name === 'AbortError') return
+        console.error('Error fetching dictionary data:', error)
+        // Fallback to empty data or show error
+      }
     }
-  }
-
-  const drawLandmarks = (ctx, landmarks, style) => {
-    ctx.fillStyle = style.color
-
-    for (const landmark of landmarks) {
-      ctx.beginPath()
-      ctx.arc(
-        landmark.x * ctx.canvas.width,
-        landmark.y * ctx.canvas.height,
-        style.radius,
-        0,
-        2 * Math.PI
-      )
-      ctx.fill()
+    fetchData()
+    return () => {
+      active = false
     }
+  }, [])
+
+  // Fetch gesture data from Python API
+  useEffect(() => {
+    let active = true
+    const fetchGestureData = async () => {
+      try {
+        const response = await fetch('http://localhost:5001/gesture', {
+          signal: AbortSignal.timeout(1000)  // Add 1 second timeout to prevent hanging
+        })
+        if (!response.ok) throw new Error('Failed to fetch gesture data')
+        const data = await response.json()
+        if (!active) return
+        setGestureData(data)
+        setGestureServiceOnline(true)
+        // Update detected gesture for display
+        if (data.sequence_gesture_text) {
+          setDetectedGesture(`Sequence: ${data.sequence_gesture_text}`)
+        } else if (data.hand_sign_text) {
+          setDetectedGesture(`Hand Sign: ${data.hand_sign_text}`)
+        } else {
+          setDetectedGesture('No gesture detected')
+        }
+      } catch (error) {
+        if (error.name === 'AbortError') return
+        console.error('Error fetching gesture data:', error)
+        setGestureServiceOnline(false)
+        setDetectedGesture('Gesture detection unavailable')
+      }
+    }
+
+    // Fetch immediately and then every 3 seconds (optimized to reduce lag)
+    fetchGestureData()
+    const interval = setInterval(fetchGestureData, 3000)
+    return () => {
+      active = false
+      clearInterval(interval)
+    }
+  }, [])
+
+  // Camera setup useEffect
+  useEffect(() => {
+    const videoElement = videoRef.current
+
+    // request camera when component mounts
+    const start = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'user',
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+          }
+        })
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          // Wait for metadata and play
+          await videoRef.current.play().catch((err) => {
+            console.error('Video play was aborted:', err)
+          })
+        }
+        setCameraAllowed(true)
+
+        // Try to initialize MediaPipe Hands
+        try {
+          // Disable MediaPipe camera processing to prevent lag
+          // Just show raw video feed instead
+          // 
+          // To re-enable: uncomment the code below
+          /*
+          // Initialize MediaPipe Hands
+          let hands;
+          // Check if already initialized
+          if (handsRef.current) {
+            hands = handsRef.current
+          } else {
+            hands = new Hands({
+              locateFile: (file) =>
+                `https://cdn.jsdelivr.net/npm/@mediapipe/hands@${MEDIAPIPE_HANDS_VERSION}/${file}`
+            })
+
+            hands.setOptions({
+              maxNumHands: 2,
+              modelComplexity: 0,
+              minDetectionConfidence: 0.5,
+              minTrackingConfidence: 0.3
+            })
+
+            hands.onResults(onHandsResults)
+            handsRef.current = hands
+          }
+
+          // Start camera processing
+          if (videoRef.current && !cameraRef.current) {
+            const camera = new Camera(videoRef.current, {
+              onFrame: async () => {
+                if (!showDemo) return
+                
+                if (videoRef.current && hands) {
+                  try {
+                    frameThrottleRef.current = (frameThrottleRef.current + 1) % 6
+                    if (frameThrottleRef.current === 0) {
+                      await hands.send({ image: videoRef.current })
+                    }
+                  } catch (error) {
+                    console.error('Error sending frame to MediaPipe:', error)
+                  }
+                }
+              },
+              width: 640,
+              height: 480
+            })
+            try {
+              await camera.start()
+            } catch (err) {
+              console.error('Camera start was aborted or failed:', err)
+            }
+            cameraRef.current = camera
+          }
+          */
+        } catch (mediaPipeError) {
+          console.error('MediaPipe initialization failed, falling back to basic camera:', mediaPipeError)
+          // Camera is still working, just no hand tracking
+          setDetectedGesture('Hand tracking unavailable')
+        }
+
+        // Simple video display loop (lightweight, no MediaPipe processing)
+        const renderLoop = () => {
+          if (videoRef.current && canvasRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
+            const canvas = canvasRef.current
+            const ctx = canvas.getContext('2d')
+            const video = videoRef.current
+            
+            // Draw mirrored video
+            ctx.save()
+            ctx.scale(-1, 1)
+            ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height)
+            ctx.restore()
+          }
+          if (videoRef.current?.srcObject) {
+            requestAnimationFrame(renderLoop)
+          }
+        }
+        renderLoop()
+      } catch (err) {
+        console.error('Camera error:', err)
+        setCameraAllowed(false)
+      }
+    }
+    start().catch((err) => {
+      if (err?.name === 'AbortError') return
+      console.error('Camera initialization error:', err)
+    })
+
+    return () => {
+      // stop tracks on unmount
+      if (videoElement && videoElement.srcObject) {
+        const tracks = videoElement.srcObject.getTracks()
+        tracks.forEach(t => t.stop())
+      }
+      
+      // Close MediaPipe instances
+      if (cameraRef.current) {
+        cameraRef.current.stop()
+        cameraRef.current = null
+      }
+      if (handsRef.current) {
+        handsRef.current.close()
+        handsRef.current = null
+      }
+    }
+  }, [onHandsResults])
+
+  // Ensure data is loaded before rendering
+  if (!dictionaryData || Object.keys(dictionaryData).length === 0) {
+    return <div>Loading... (Data Not Found/Server Error)</div>
   }
 
-  // Hand connections (simplified - MediaPipe has 21 landmarks)
-  const HAND_CONNECTIONS = [
-    [0, 1], [1, 2], [2, 3], [3, 4], // Thumb
-    [0, 5], [5, 6], [6, 7], [7, 8], // Index
-    [5, 9], [9, 10], [10, 11], [11, 12], // Middle
-    [9, 13], [13, 14], [14, 15], [15, 16], // Ring
-    [13, 17], [17, 18], [18, 19], [19, 20], // Pinky
-    [0, 17] // Palm
-  ]
+  const categoryKeys = Object.keys(dictionaryData)
+
+  // Create All category with all words from other categories
+  const allWords = categoryKeys
+    .filter(key => key !== 'All')
+    .flatMap(key => dictionaryData[key].words)
+
+  const currentCategoryData = selectedCategory === 'All'
+    ? { name: 'All Words', words: allWords }
+    : dictionaryData[selectedCategory]
+
+  // Filter words based on search query
+  const filteredWords = currentCategoryData.words.filter(word =>
+    word.word.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const totalWords = filteredWords.length
+  const totalPages = Math.ceil(totalWords / wordsPerPage)
+
+  // Get words for current page
+  const startIndex = (currentPage - 1) * wordsPerPage
+  const endIndex = startIndex + wordsPerPage
+  const currentWords = filteredWords.slice(startIndex, endIndex)
 
   const handleCategoryClick = (category) => {
     setSelectedCategory(category)
@@ -550,7 +440,7 @@ export default function Vocabulary() {
           </div>
           <span>{selectedWord ? getConfidence(selectedWord.id) : 0}%</span>
         </div>
-        <div className="vocab-greeting">Hello, {userName}! 👋</div>
+        <div className="vocab-greeting">Hello, {userName}! </div>
       </header>
 
       {/* Progress and Selected Word Info */}
@@ -667,7 +557,7 @@ export default function Vocabulary() {
                 <div className="gif-area">
                   {selectedWord ? (
                     <img
-                      src={`/HKSLLEX-video-2023-webp/HKSLLEX-2023-${selectedWord.id.padStart(8, '0')}-${selectedWord.word}.webp`}
+                      src={`http://localhost/SL-Database_api/video-webp/${selectedWord.id.padStart(8, '0')}-${selectedWord.word}.webp`}
                       alt={selectedWord.word}
                       className="sign-video"
                       onError={(e) => {
@@ -740,16 +630,16 @@ export default function Vocabulary() {
               />
               <canvas
                 ref={canvasRef}
-                width={1280}
-                height={720}
+                width={640}
+                height={480}
                 className={cameraAllowed ? 'live' : 'hidden'}
-                style={{ width: '100%', height: 'auto' }}
+                style={{ width: '100%', height: 'auto', backgroundColor: '#000' }}
               />
               {!cameraAllowed && (
                 <div className="cam-placeholder">
                   <div style={{ fontSize: 28 }}>📷</div>
                   <div>Camera Feed</div>
-                  <small>Allow camera to practice</small>
+                  <small>Allow camera permission to practice</small>
                 </div>
               )}
               {handLandmarks && (
@@ -764,6 +654,69 @@ export default function Vocabulary() {
                   fontSize: '12px'
                 }}>
                   Hands detected: {handLandmarks.length}
+                </div>
+              )}
+            </div>
+            {/* Gesture Detection Results */}
+            <div style={{
+              padding: '12px',
+              background: '#f5f5f5',
+              borderTop: '1px solid #ddd',
+              fontSize: '14px'
+            }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#333', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span>Gesture Recognition:</span>
+                <span style={{ 
+                  fontSize: '11px', 
+                  padding: '2px 8px', 
+                  borderRadius: '12px',
+                  backgroundColor: gestureServiceOnline ? '#d4edda' : '#f8d7da',
+                  color: gestureServiceOnline ? '#155724' : '#721c24',
+                  fontWeight: 'normal'
+                }}>
+                  {gestureServiceOnline ? '● Connected' : '● Offline - Run app.py'}
+                </span>
+              </div>
+              {gestureServiceOnline ? (
+                <>
+                  {gestureData.sequence_gesture_text && (
+                    <div style={{ marginBottom: '4px' }}>
+                      <strong>Sequence:</strong> {gestureData.sequence_gesture_text}
+                    </div>
+                  )}
+                  {gestureData.hand_sign_text && (
+                    <div style={{ marginBottom: '4px' }}>
+                      <strong>Hand Sign:</strong> {gestureData.hand_sign_text}
+                    </div>
+                  )}
+                  {gestureData.finger_gesture_text && (
+                    <div style={{ marginBottom: '4px' }}>
+                      <strong>Details:</strong> {gestureData.finger_gesture_text}
+                    </div>
+                  )}
+                  {gestureData.handedness && (
+                    <div style={{ marginBottom: '4px' }}>
+                      <strong>Hand:</strong> {gestureData.handedness}
+                    </div>
+                  )}
+                  {gestureData.fps && (
+                    <div style={{ fontSize: '12px', color: '#666' }}>
+                      FPS: {gestureData.fps}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div style={{ color: '#666', fontSize: '13px' }}>
+                  Connecting to gesture detection server...<br/>
+                  <div style={{ marginTop: '8px', padding: '8px', background: '#fff3cd', borderRadius: '4px', color: '#856404' }}>
+                    <strong>To start gesture detection:</strong><br/>
+                    1. Open terminal<br/>
+                    2. Run: <code style={{ background: '#fff', padding: '2px 6px', borderRadius: '3px' }}>cd /Users/ronald8931/Desktop/FYP-SL/cv_hands</code><br/>
+                    3. Run: <code style={{ background: '#fff', padding: '2px 6px', borderRadius: '3px' }}>python3 app_simple.py</code><br/>
+                    <div style={{ marginTop: '6px', fontSize: '12px' }}>
+                      Server should start on <strong>http://localhost:5001</strong>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
