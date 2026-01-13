@@ -5,10 +5,11 @@ Simplified gesture detection server using legacy MediaPipe Hands API
 No .task model files required!
 """
 import cv2 as cv
-from mediapipe.python.solutions import drawing_utils as mp_drawing
-from mediapipe.python.solutions import face_mesh as mp_face_mesh
-from mediapipe.python.solutions import hands as mp_hands
-from mediapipe.python.solutions import pose as mp_pose
+import mediapipe as mp
+mp_drawing = mp.solutions.drawing_utils
+mp_face_mesh = mp.solutions.face_mesh
+mp_hands = mp.solutions.hands
+mp_pose = mp.solutions.pose
 import numpy as np
 import math
 import copy
