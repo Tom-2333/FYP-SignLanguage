@@ -219,61 +219,7 @@ export default function Vocabulary() {
 
         // Try to initialize MediaPipe Hands
         try {
-          // Disable MediaPipe camera processing to prevent lag
-          // Just show raw video feed instead
-          // 
-          // To re-enable: uncomment the code below
-          /*
-          // Initialize MediaPipe Hands
-          let hands;
-          // Check if already initialized
-          if (handsRef.current) {
-            hands = handsRef.current
-          } else {
-            hands = new Hands({
-              locateFile: (file) =>
-                `https://cdn.jsdelivr.net/npm/@mediapipe/hands@${MEDIAPIPE_HANDS_VERSION}/${file}`
-            })
-
-            hands.setOptions({
-              maxNumHands: 2,
-              modelComplexity: 0,
-              minDetectionConfidence: 0.5,
-              minTrackingConfidence: 0.3
-            })
-
-            hands.onResults(onHandsResults)
-            handsRef.current = hands
-          }
-
-          // Start camera processing
-          if (videoRef.current && !cameraRef.current) {
-            const camera = new Camera(videoRef.current, {
-              onFrame: async () => {
-                if (!showDemo) return
-                
-                if (videoRef.current && hands) {
-                  try {
-                    frameThrottleRef.current = (frameThrottleRef.current + 1) % 6
-                    if (frameThrottleRef.current === 0) {
-                      await hands.send({ image: videoRef.current })
-                    }
-                  } catch (error) {
-                    console.error('Error sending frame to MediaPipe:', error)
-                  }
-                }
-              },
-              width: 640,
-              height: 480
-            })
-            try {
-              await camera.start()
-            } catch (err) {
-              console.error('Camera start was aborted or failed:', err)
-            }
-            cameraRef.current = camera
-          }
-          */
+          
         } catch (mediaPipeError) {
           console.error('MediaPipe initialization failed, falling back to basic camera:', mediaPipeError)
           // Camera is still working, just no hand tracking
@@ -557,7 +503,7 @@ export default function Vocabulary() {
                 <div className="gif-area">
                   {selectedWord ? (
                     <img
-                      src={`http://localhost/SL-Database_api/video-webp/${selectedWord.id.padStart(8, '0')}-${selectedWord.word}.webp`}
+                      src={`http://localhost/SL-Database_api/video-webp/${selectedWord.id.padStart(8, '0')}.webp`}
                       alt={selectedWord.word}
                       className="sign-video"
                       onError={(e) => {
