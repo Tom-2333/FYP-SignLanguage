@@ -219,7 +219,61 @@ export default function Vocabulary() {
 
         // Try to initialize MediaPipe Hands
         try {
-          
+          // Disable MediaPipe camera processing to prevent lag
+          // Just show raw video feed instead
+          // 
+          // To re-enable: uncomment the code below
+          /*
+          // Initialize MediaPipe Hands
+          let hands;
+          // Check if already initialized
+          if (handsRef.current) {
+            hands = handsRef.current
+          } else {
+            hands = new Hands({
+              locateFile: (file) =>
+                `https://cdn.jsdelivr.net/npm/@mediapipe/hands@${MEDIAPIPE_HANDS_VERSION}/${file}`
+            })
+
+            hands.setOptions({
+              maxNumHands: 2,
+              modelComplexity: 0,
+              minDetectionConfidence: 0.5,
+              minTrackingConfidence: 0.3
+            })
+
+            hands.onResults(onHandsResults)
+            handsRef.current = hands
+          }
+
+          // Start camera processing
+          if (videoRef.current && !cameraRef.current) {
+            const camera = new Camera(videoRef.current, {
+              onFrame: async () => {
+                if (!showDemo) return
+                
+                if (videoRef.current && hands) {
+                  try {
+                    frameThrottleRef.current = (frameThrottleRef.current + 1) % 6
+                    if (frameThrottleRef.current === 0) {
+                      await hands.send({ image: videoRef.current })
+                    }
+                  } catch (error) {
+                    console.error('Error sending frame to MediaPipe:', error)
+                  }
+                }
+              },
+              width: 640,
+              height: 480
+            })
+            try {
+              await camera.start()
+            } catch (err) {
+              console.error('Camera start was aborted or failed:', err)
+            }
+            cameraRef.current = camera
+          }
+          */
         } catch (mediaPipeError) {
           console.error('MediaPipe initialization failed, falling back to basic camera:', mediaPipeError)
           // Camera is still working, just no hand tracking
@@ -503,7 +557,7 @@ export default function Vocabulary() {
                 <div className="gif-area">
                   {selectedWord ? (
                     <img
-                      src={`http://localhost/SL-Database_api/video-webp/${selectedWord.id.padStart(8, '0')}.webp`}
+                      src={`http://localhost/SL-Database_api/video-webp/${selectedWord.id.padStart(8, '0')}-${selectedWord.word}.webp`}
                       alt={selectedWord.word}
                       className="sign-video"
                       onError={(e) => {
@@ -635,14 +689,25 @@ export default function Vocabulary() {
                       <strong>Hand Sign:</strong> {gestureData.hand_sign_text}
                     </div>
                   )}
-                  {gestureData.finger_gesture_text && (
-                    <div style={{ marginBottom: '4px' }}>
-                      <strong>Details:</strong> {gestureData.finger_gesture_text}
-                    </div>
-                  )}
-                  {gestureData.handedness && (
-                    <div style={{ marginBottom: '4px' }}>
-                      <strong>Hand:</strong> {gestureData.handedness}
+                  {/* Display All detected hands */}
+                  {gestureData.hands && gestureData.hands.length > 0 && (
+                    <div style={{ marginBottom: '8px', padding: '8px', background: '#e8f5e9', borderRadius: '4px' }}>
+                      <strong>Detected {gestureData.hands.length} hands:</strong>
+                      {gestureData.hands.map((hand, index) => (
+                        <div key={index} style={{ marginTop: '4px', marginLeft: '8px' }}>
+                          <span style={{ 
+                            display: 'inline-block',
+                            padding: '2px 8px',
+                            background: hand.hand === 'Left' ? '#bbdefb' : '#ffccbc',
+                            borderRadius: '3px',
+                            marginRight: '8px',
+                            fontSize: '12px'
+                          }}>
+                            {hand.hand === 'Left' ? '👈 Left Hand' : '👉 Right Hand'}
+                          </span>
+                          <span>{hand.gesture || '(No Gesture)'}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
                   {gestureData.fps && (
@@ -667,6 +732,38 @@ export default function Vocabulary() {
               )}
             </div>
           </div>
+
+          {/* Match Display - Shows below camera when gesture matches selected word */}
+          {showDemo && selectedWord && gestureServiceOnline && gestureData.sequence_gesture_text && (
+            <div style={{
+              marginTop: '16px',
+              padding: '16px',
+              background: gestureData.sequence_gesture_text.toLowerCase() === selectedWord.word.toLowerCase() ? '#d4edda' : '#f8f9fa',
+              border: gestureData.sequence_gesture_text.toLowerCase() === selectedWord.word.toLowerCase() ? '2px solid #28a745' : '2px solid #ddd',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              textAlign: 'center',
+              color: gestureData.sequence_gesture_text.toLowerCase() === selectedWord.word.toLowerCase() ? '#155724' : '#333'
+            }}>
+              <div>Selected Word: {selectedWord.word}</div>
+              <div>Sequence Gesture: {gestureData.sequence_gesture_text}</div>
+              {gestureData.sequence_gesture_text.toLowerCase() === selectedWord.word.toLowerCase() && (
+                <div style={{ 
+                  marginTop: '8px', 
+                  fontSize: '18px', 
+                  color: '#28a745',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}>
+                  <span>✓</span>
+                  <span>Match</span>
+                </div>
+              )}
+            </div>
+          )}
         </main>
       </section>
     </div>
