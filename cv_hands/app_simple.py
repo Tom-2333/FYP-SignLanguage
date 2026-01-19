@@ -6,21 +6,16 @@ No .task model files required!
 """
 import cv2 as cv
 import mediapipe as mp
-mp_drawing = mp.solutions.drawing_utils
-mp_face_mesh = mp.solutions.face_mesh
-mp_hands = mp.solutions.hands
-mp_pose = mp.solutions.pose
 import numpy as np
 import math
 import copy
-from flask import Flask, jsonify
+import os
+import platform
+from flask import Flask, jsonify, Response
 from flask_cors import CORS
 import threading
 import time
 from collections import deque
-from pathlib import Path
-import argparse
-import sys
 
 from model import KeyPointClassifier, KeyPointSequenceClassifier
 
@@ -37,28 +32,34 @@ current_gesture_data = {
     "fps": 0
 }
 
-stop_event = threading.Event()
+# Latest camera frame for MJPEG streaming
+latest_frame = None
+frame_lock = threading.Lock()
+
+# Initialize MediaPipe Solutions (legacy API - no model files needed)
+mp_hands = mp.solutions.hands
+mp_face_mesh = mp.solutions.face_mesh
+mp_pose = mp.solutions.pose
+mp_drawing = mp.solutions.drawing_utils
 
 hands = mp_hands.Hands(
     static_image_mode=False,
     max_num_hands=2,
-    min_detection_confidence=0.8,
-    min_tracking_confidence=0.6
+    min_detection_confidence=0.7,
+    min_tracking_confidence=0.5
 )
 
 face_mesh = mp_face_mesh.FaceMesh(
     static_image_mode=False,
     max_num_faces=1,
-    refine_landmarks=True,
-    min_detection_confidence=0.8,
-    min_tracking_confidence=0.6
+    min_detection_confidence=0.7,
+    min_tracking_confidence=0.5
 )
 
 pose = mp_pose.Pose(
     static_image_mode=False,
-    model_complexity=1,
-    min_detection_confidence=0.8,
-    min_tracking_confidence=0.6
+    min_detection_confidence=0.7,
+    min_tracking_confidence=0.5
 )
 
 # Load gesture classifiers
@@ -66,13 +67,11 @@ keypoint_classifier = KeyPointClassifier()
 keypoint_sequence_classifier = KeyPointSequenceClassifier()
 
 # Read labels
-_BASE_DIR = Path(__file__).resolve().parent
-
-with open(_BASE_DIR / 'Word-Label' / 'keypoint_classifier_label.csv', encoding='utf-8-sig') as f:
+with open('Word-Label/keypoint_classifier_label.csv', encoding='utf-8-sig') as f:
     keypoint_classifier_labels = [row[0] for row in __import__('csv').reader(f)]
 
 try:
-    with open(_BASE_DIR / 'Word-Label' / 'keypoint_sequence_classifier_label.csv', encoding='utf-8-sig') as f:
+    with open('Word-Label/keypoint_sequence_classifier_label.csv', encoding='utf-8-sig') as f:
         keypoint_sequence_classifier_labels = [row[0] for row in __import__('csv').reader(f)]
 except FileNotFoundError:
     keypoint_sequence_classifier_labels = []
@@ -325,34 +324,14 @@ def pre_process_landmark(landmark_list, face_landmarks=None, pose_landmarks=None
 def gesture_detection_loop():
     """Main gesture detection loop running in separate thread"""
     global current_gesture_data
-
-    # Defaults (can be overridden in __main__)
-    camera_index = getattr(gesture_detection_loop, "camera_index", 0)
-    show_window = getattr(gesture_detection_loop, "show_window", False)
-
-    preferred_backend = cv.CAP_DSHOW if sys.platform.startswith("win") else 0
-
-    def _try_open(index: int):
-        cap_local = cv.VideoCapture(index, preferred_backend) if preferred_backend else cv.VideoCapture(index)
-        cap_local.set(cv.CAP_PROP_FRAME_WIDTH, 640)
-        cap_local.set(cv.CAP_PROP_FRAME_HEIGHT, 480)
-        if cap_local.isOpened():
-            return cap_local, index
-        cap_local.release()
-        return None, None
-
-    cap, opened_index = _try_open(camera_index)
-    if cap is None:
-        for idx in (0, 1, 2, 3):
-            if idx == camera_index:
-                continue
-            cap, opened_index = _try_open(idx)
-            if cap is not None:
-                break
-
-    if cap is None or not cap.isOpened():
-        print("❌ ERROR: Cannot open camera! Check if camera is available / not used by another app.")
-        print("   Tips: close Teams/Zoom/Camera app; check Windows Camera privacy settings; try --camera 1")
+    global latest_frame
+    
+    cap = cv.VideoCapture(0)
+    cap.set(cv.CAP_PROP_FRAME_WIDTH, 960)
+    cap.set(cv.CAP_PROP_FRAME_HEIGHT, 540)
+    
+    if not cap.isOpened():
+        print("❌ ERROR: Cannot open camera! Check if camera is available.")
         return
     
     fps_time = time.time()
@@ -361,10 +340,10 @@ def gesture_detection_loop():
     detection_count = 0
     last_detection_time = time.time()
     
-    print(f"🎥 Camera started (index={opened_index}) - Gesture detection active!")
+    print("🎥 Camera started - Gesture detection active!")
     print("👋 Show your hand to the camera to test detection...")
     
-    while cap.isOpened() and not stop_event.is_set():
+    while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             print("❌ ERROR: Failed to read frame from camera")
@@ -389,11 +368,12 @@ def gesture_detection_loop():
         
         # Convert to RGB for MediaPipe
         frame_rgb = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
-        
-        # Process with all MediaPipe models
+
+        frame_rgb.flags.writeable = False
         hands_results = hands.process(frame_rgb)
         face_results = face_mesh.process(frame_rgb)
         pose_results = pose.process(frame_rgb)
+        frame_rgb.flags.writeable = True
         
         hand_sign_text = ""
         sequence_gesture_text = ""
@@ -403,10 +383,10 @@ def gesture_detection_loop():
         face_landmarks = None
         pose_landmarks = None
         
-        if face_results.multi_face_landmarks:
+        if face_results and face_results.multi_face_landmarks:
             face_landmarks = face_results.multi_face_landmarks[0]
         
-        if pose_results.pose_landmarks:
+        if pose_results and pose_results.pose_landmarks:
             pose_landmarks = pose_results.pose_landmarks
         
         if hands_results.multi_hand_landmarks and hands_results.multi_handedness:
@@ -487,15 +467,20 @@ def gesture_detection_loop():
         cv.putText(frame, f"FPS: {current_fps}", (10, frame.shape[0] - 10),
                   cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         
-        # Display the frame (enabled with --show)
-        if show_window:
-            cv.imshow('Gesture Detection - Python Camera', frame)
-            key = cv.waitKey(1) & 0xFF
-            if key == ord('q') or key == 27:  # q or ESC
-                print("👋 Closing gesture detection...")
-                stop_event.set()
-                break
+        # Display the frame (OPTIONAL - disabled due to threading issues on macOS)
+        # To enable window display, run this script directly instead of through Flask
+        # Uncomment the lines below:
+        # cv.imshow('Gesture Detection - Python Camera', frame)
+        # if cv.waitKey(1) & 0xFF == ord('q'):
+        #     print("👋 Closing gesture detection...")
+        #     break
         
+        # Update latest frame for MJPEG streaming
+        encode_ok, encoded = cv.imencode('.jpg', frame, [int(cv.IMWRITE_JPEG_QUALITY), 80])
+        if encode_ok:
+            with frame_lock:
+                latest_frame = encoded.tobytes()
+
         # Update global gesture data
         current_gesture_data.update({
             "hand_sign_text": hand_sign_text,
@@ -513,10 +498,34 @@ def gesture_detection_loop():
     print("Camera closed")
 
 
+def generate_mjpeg_stream():
+    """Yield MJPEG frames from the latest camera frame"""
+    while True:
+        with frame_lock:
+            frame = latest_frame
+        if frame is None:
+            time.sleep(0.05)
+            continue
+
+        yield (
+            b'--frame\r\n'
+            b'Content-Type: image/jpeg\r\n'
+            b'Content-Length: ' + str(len(frame)).encode() + b'\r\n\r\n' +
+            frame + b'\r\n'
+        )
+        time.sleep(0.03)
+
+
 @app.route('/gesture')
 def get_gesture():
     """API endpoint to get current gesture data"""
     return jsonify(current_gesture_data)
+
+
+@app.route('/stream')
+def stream():
+    """MJPEG stream endpoint"""
+    return Response(generate_mjpeg_stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 @app.route('/health')
@@ -526,40 +535,18 @@ def health_check():
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Gesture detection server (optionally with camera preview)")
-    parser.add_argument("--camera", type=int, default=0, help="Camera index (default: 0)")
-    parser.add_argument("--show", action="store_true", help="Show camera preview window (press q/ESC to quit)")
-    parser.add_argument("--no-server", action="store_true", help="Run detection only (no Flask server)")
-    args = parser.parse_args()
-
-    gesture_detection_loop.camera_index = args.camera
-    gesture_detection_loop.show_window = args.show
-
-    if args.no_server:
-        gesture_detection_loop()
-        raise SystemExit(0)
-
+    # Start gesture detection in separate thread
+    detection_thread = threading.Thread(target=gesture_detection_loop, daemon=True)
+    detection_thread.start()
+    
     print("=" * 60)
     print("🚀 Gesture Detection Server Starting...")
     print("=" * 60)
     print("📡 API Server: http://localhost:5001")
     print("🔍 Gesture endpoint: http://localhost:5001/gesture")
+    print("🖼️  Stream endpoint: http://localhost:5001/stream")
     print("💚 Health check: http://localhost:5001/health")
     print("=" * 60)
-
-    if args.show:
-        # Run Flask in background so OpenCV window stays responsive in main thread
-        server_thread = threading.Thread(
-            target=lambda: app.run(host='0.0.0.0', port=5001, debug=False, threaded=True, use_reloader=False),
-            daemon=True,
-        )
-        server_thread.start()
-        gesture_detection_loop()
-        raise SystemExit(0)
-
-    # Default: no preview window; run detection in background thread
-    detection_thread = threading.Thread(target=gesture_detection_loop, daemon=True)
-    detection_thread.start()
-
+    
     # Start Flask server
-    app.run(host='0.0.0.0', port=5001, debug=False, threaded=True, use_reloader=False)
+    app.run(host='0.0.0.0', port=5001, debug=False, threaded=True)

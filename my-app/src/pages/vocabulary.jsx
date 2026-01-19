@@ -1,7 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import './vocabulary.css'
-import { Hands } from '@mediapipe/hands'
-import { Camera } from '@mediapipe/camera_utils'
 
 // Get confidence score for a word (currently hard-coded, will connect to API later)
 const getConfidence = (wordId) => {
@@ -11,11 +9,6 @@ const getConfidence = (wordId) => {
 }
 
 export default function Vocabulary() {
-  const videoRef = useRef(null)
-  const canvasRef = useRef(null)
-  const handsRef = useRef(null)
-  const cameraRef = useRef(null)
-  const [cameraAllowed, setCameraAllowed] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedWord, setSelectedWord] = useState(null)
@@ -24,116 +17,27 @@ export default function Vocabulary() {
   const [showSuggestions, setShowSuggestions] = useState(false) // Show search suggestions
   const [detectedGesture, setDetectedGesture] = useState('') // Detected hand gesture
   const [gestureData, setGestureData] = useState({}) // Detailed gesture data from Python API
-  const [handLandmarks, setHandLandmarks] = useState(null) // Hand landmarks data
   const [dictionaryData, setDictionaryData] = useState({}) // Dictionary data fetched from API
   const [gestureServiceOnline, setGestureServiceOnline] = useState(false) // Python service reachability
-  const frameThrottleRef = useRef(0) // Throttle MediaPipe frames to lower CPU
+  const [streamAvailable, setStreamAvailable] = useState(false) // Python MJPEG stream reachability
+  const [isDarkMode, setIsDarkMode] = useState(false) // Dark mode state
+  const streamUrl = 'http://localhost:5001/stream'
   const userName = localStorage.getItem('userName') || 'User'
   const wordsPerPage = 10
 
-  // CRA (react-scripts) does not automatically serve MediaPipe's WASM/asset files from node_modules.
-  // Without a proper locateFile, MediaPipe will request assets from your app origin and often get
-  // index.html ("<"), causing "Unexpected token '<'" runtime errors.
-  const MEDIAPIPE_HANDS_VERSION = '0.4.1675469240'
-
-  // Hand connections (simplified - MediaPipe has 21 landmarks)
-  const HAND_CONNECTIONS = [
-    [0, 1], [1, 2], [2, 3], [3, 4], // Thumb
-    [0, 5], [5, 6], [6, 7], [7, 8], // Index
-    [5, 9], [9, 10], [10, 11], [11, 12], // Middle
-    [9, 13], [13, 14], [14, 15], [15, 16], // Ring
-    [13, 17], [17, 18], [18, 19], [19, 20], // Pinky
-    [0, 17] // Palm
-  ]
-
-  // Helper functions for drawing (simplified versions)
-  const drawConnectors = (ctx, landmarks, connections, style) => {
-    ctx.strokeStyle = style.color
-    ctx.lineWidth = style.lineWidth
-
-    for (const connection of connections) {
-      const [start, end] = connection
-      ctx.beginPath()
-      ctx.moveTo(
-        (1 - landmarks[start].x) * ctx.canvas.width,
-        landmarks[start].y * ctx.canvas.height
-      )
-      ctx.lineTo(
-        (1 - landmarks[end].x) * ctx.canvas.width,
-        landmarks[end].y * ctx.canvas.height
-      )
-      ctx.stroke()
+  // Load theme preference from localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme')
+    if (savedTheme === 'dark') {
+      setIsDarkMode(true)
     }
+  }, [])
+
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode)
+    localStorage.setItem('theme', !isDarkMode ? 'dark' : 'light')
   }
-
-  const drawLandmarks = (ctx, landmarks, style) => {
-    ctx.fillStyle = style.color
-
-    for (const landmark of landmarks) {
-      ctx.beginPath()
-      ctx.arc(
-        (1 - landmark.x) * ctx.canvas.width,
-        landmark.y * ctx.canvas.height,
-        style.radius,
-        0,
-        2 * Math.PI
-      )
-      ctx.fill()
-    }
-  }
-
-  const onHandsResults = useCallback((results) => {
-    // Save canvas reference
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const canvasCtx = canvas.getContext('2d')
-    if (!canvasCtx) return
-
-    // Clear canvas
-    canvasCtx.save()
-    canvasCtx.clearRect(0, 0, canvas.width, canvas.height)
-
-    // Draw the video frame
-    if (results.image) {
-      canvasCtx.save()
-      canvasCtx.scale(-1, 1)
-      canvasCtx.drawImage(results.image, -canvas.width, 0, canvas.width, canvas.height)
-      canvasCtx.restore()
-    }
-
-    // Draw hand landmarks if detected
-    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-      for (const landmarks of results.multiHandLandmarks) {
-        drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
-          color: '#00FF00',
-          lineWidth: 3
-        })
-        drawLandmarks(canvasCtx, landmarks, {
-          color: '#FF0000',
-          lineWidth: 1,
-          radius: 3
-        })
-      }
-
-      // Store landmarks for gesture recognition
-      setHandLandmarks(results.multiHandLandmarks)
-
-      // Simple gesture detection (placeholder - you can expand this)
-      const numHands = results.multiHandLandmarks.length
-      if (numHands === 1) {
-        setDetectedGesture('One hand detected')
-      } else if (numHands === 2) {
-        setDetectedGesture('Two hands detected')
-      }
-    } else {
-      setHandLandmarks(null)
-      setDetectedGesture('No hands detected')
-    }
-
-    canvasCtx.restore()
-  }, [HAND_CONNECTIONS, drawConnectors, drawLandmarks])
-
 
   // Fetch dictionary data from XAMPP API
   useEffect(() => {
@@ -193,139 +97,6 @@ export default function Vocabulary() {
       clearInterval(interval)
     }
   }, [])
-
-  // Camera setup useEffect
-  useEffect(() => {
-    const videoElement = videoRef.current
-
-    // request camera when component mounts
-    const start = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: 'user',
-            width: { ideal: 640 },
-            height: { ideal: 480 }
-          }
-        })
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-          // Wait for metadata and play
-          await videoRef.current.play().catch((err) => {
-            console.error('Video play was aborted:', err)
-          })
-        }
-        setCameraAllowed(true)
-
-        // Try to initialize MediaPipe Hands
-        try {
-          // Disable MediaPipe camera processing to prevent lag
-          // Just show raw video feed instead
-          // 
-          // To re-enable: uncomment the code below
-          /*
-          // Initialize MediaPipe Hands
-          let hands;
-          // Check if already initialized
-          if (handsRef.current) {
-            hands = handsRef.current
-          } else {
-            hands = new Hands({
-              locateFile: (file) =>
-                `https://cdn.jsdelivr.net/npm/@mediapipe/hands@${MEDIAPIPE_HANDS_VERSION}/${file}`
-            })
-
-            hands.setOptions({
-              maxNumHands: 2,
-              modelComplexity: 0,
-              minDetectionConfidence: 0.5,
-              minTrackingConfidence: 0.3
-            })
-
-            hands.onResults(onHandsResults)
-            handsRef.current = hands
-          }
-
-          // Start camera processing
-          if (videoRef.current && !cameraRef.current) {
-            const camera = new Camera(videoRef.current, {
-              onFrame: async () => {
-                if (!showDemo) return
-                
-                if (videoRef.current && hands) {
-                  try {
-                    frameThrottleRef.current = (frameThrottleRef.current + 1) % 6
-                    if (frameThrottleRef.current === 0) {
-                      await hands.send({ image: videoRef.current })
-                    }
-                  } catch (error) {
-                    console.error('Error sending frame to MediaPipe:', error)
-                  }
-                }
-              },
-              width: 640,
-              height: 480
-            })
-            try {
-              await camera.start()
-            } catch (err) {
-              console.error('Camera start was aborted or failed:', err)
-            }
-            cameraRef.current = camera
-          }
-          */
-        } catch (mediaPipeError) {
-          console.error('MediaPipe initialization failed, falling back to basic camera:', mediaPipeError)
-          // Camera is still working, just no hand tracking
-          setDetectedGesture('Hand tracking unavailable')
-        }
-
-        // Simple video display loop (lightweight, no MediaPipe processing)
-        const renderLoop = () => {
-          if (videoRef.current && canvasRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
-            const canvas = canvasRef.current
-            const ctx = canvas.getContext('2d')
-            const video = videoRef.current
-            
-            // Draw mirrored video
-            ctx.save()
-            ctx.scale(-1, 1)
-            ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height)
-            ctx.restore()
-          }
-          if (videoRef.current?.srcObject) {
-            requestAnimationFrame(renderLoop)
-          }
-        }
-        renderLoop()
-      } catch (err) {
-        console.error('Camera error:', err)
-        setCameraAllowed(false)
-      }
-    }
-    start().catch((err) => {
-      if (err?.name === 'AbortError') return
-      console.error('Camera initialization error:', err)
-    })
-
-    return () => {
-      // stop tracks on unmount
-      if (videoElement && videoElement.srcObject) {
-        const tracks = videoElement.srcObject.getTracks()
-        tracks.forEach(t => t.stop())
-      }
-      
-      // Close MediaPipe instances
-      if (cameraRef.current) {
-        cameraRef.current.stop()
-        cameraRef.current = null
-      }
-      if (handsRef.current) {
-        handsRef.current.close()
-        handsRef.current = null
-      }
-    }
-  }, [onHandsResults])
 
   // Ensure data is loaded before rendering
   if (!dictionaryData || Object.keys(dictionaryData).length === 0) {
@@ -431,7 +202,7 @@ export default function Vocabulary() {
   }
 
   return (
-    <div className="vocab-container">
+    <div className={`vocab-container ${isDarkMode ? 'dark-mode' : ''}`}>
       <header className="vocab-header">
         <div className="vocab-progress">
           <span>Recognition Rate</span>
@@ -441,6 +212,18 @@ export default function Vocabulary() {
           <span>{selectedWord ? getConfidence(selectedWord.id) : 0}%</span>
         </div>
         <div className="vocab-greeting">Hello, {userName}! </div>
+        {/* Theme Toggle Button */}
+        <button 
+          className="theme-toggle" 
+          onClick={toggleDarkMode}
+          aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {isDarkMode ? (
+            <span className="sun-icon">☀️</span>
+          ) : (
+            <span className="moon-icon">🌙</span>
+          )}
+        </button>
       </header>
 
       {/* Progress and Selected Word Info */}
@@ -617,43 +400,25 @@ export default function Vocabulary() {
           {/* Camera Box - Always rendered, but hidden when not in demo view */}
           <div className="vocab-card cam-box" style={{ display: showDemo ? 'block' : 'none' }}>
             <div className="box-title">
-              Your Sign (Camera)
+              Your Sign (Python Stream)
               {detectedGesture && <span style={{ marginLeft: '10px', fontSize: '14px', color: '#4CAF50' }}>• {detectedGesture}</span>}
             </div>
             <div className="cam-wrap" style={{ position: 'relative' }}>
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                style={{ display: 'none' }}
-              />
-              <canvas
-                ref={canvasRef}
-                width={640}
-                height={480}
-                className={cameraAllowed ? 'live' : 'hidden'}
-                style={{ width: '100%', height: 'auto', backgroundColor: '#000' }}
-              />
-              {!cameraAllowed && (
+              {showDemo && (
+                <img
+                  src={streamUrl}
+                  alt="Camera stream"
+                  className={streamAvailable ? 'live' : 'hidden'}
+                  style={{ width: '100%', height: 'auto', backgroundColor: '#000', display: streamAvailable ? 'block' : 'none' }}
+                  onLoad={() => setStreamAvailable(true)}
+                  onError={() => setStreamAvailable(false)}
+                />
+              )}
+              {!streamAvailable && (
                 <div className="cam-placeholder">
                   <div style={{ fontSize: 28 }}>📷</div>
-                  <div>Camera Feed</div>
-                  <small>Allow camera permission to practice</small>
-                </div>
-              )}
-              {handLandmarks && (
-                <div style={{
-                  position: 'absolute',
-                  bottom: '10px',
-                  left: '10px',
-                  background: 'rgba(0,0,0,0.7)',
-                  color: 'white',
-                  padding: '8px 12px',
-                  borderRadius: '4px',
-                  fontSize: '12px'
-                }}>
-                  Hands detected: {handLandmarks.length}
+                  <div>Stream Unavailable</div>
+                  <small>Check http://localhost:5001/stream</small>
                 </div>
               )}
             </div>
@@ -676,6 +441,16 @@ export default function Vocabulary() {
                 }}>
                   {gestureServiceOnline ? '● Connected' : '● Offline - Run app.py'}
                 </span>
+                <span style={{ 
+                  fontSize: '11px', 
+                  padding: '2px 8px', 
+                  borderRadius: '12px',
+                  backgroundColor: streamAvailable ? '#d4edda' : '#f8d7da',
+                  color: streamAvailable ? '#155724' : '#721c24',
+                  fontWeight: 'normal'
+                }}>
+                  {streamAvailable ? '● Stream' : '● Stream Offline'}
+                </span>
               </div>
               {gestureServiceOnline ? (
                 <>
@@ -689,25 +464,14 @@ export default function Vocabulary() {
                       <strong>Hand Sign:</strong> {gestureData.hand_sign_text}
                     </div>
                   )}
-                  {/* Display All detected hands */}
-                  {gestureData.hands && gestureData.hands.length > 0 && (
-                    <div style={{ marginBottom: '8px', padding: '8px', background: '#e8f5e9', borderRadius: '4px' }}>
-                      <strong>Detected {gestureData.hands.length} hands:</strong>
-                      {gestureData.hands.map((hand, index) => (
-                        <div key={index} style={{ marginTop: '4px', marginLeft: '8px' }}>
-                          <span style={{ 
-                            display: 'inline-block',
-                            padding: '2px 8px',
-                            background: hand.hand === 'Left' ? '#bbdefb' : '#ffccbc',
-                            borderRadius: '3px',
-                            marginRight: '8px',
-                            fontSize: '12px'
-                          }}>
-                            {hand.hand === 'Left' ? '👈 Left Hand' : '👉 Right Hand'}
-                          </span>
-                          <span>{hand.gesture || '(No Gesture)'}</span>
-                        </div>
-                      ))}
+                  {gestureData.finger_gesture_text && (
+                    <div style={{ marginBottom: '4px' }}>
+                      <strong>Details:</strong> {gestureData.finger_gesture_text}
+                    </div>
+                  )}
+                  {gestureData.handedness && (
+                    <div style={{ marginBottom: '4px' }}>
+                      <strong>Hand:</strong> {gestureData.handedness}
                     </div>
                   )}
                   {gestureData.fps && (
@@ -722,48 +486,16 @@ export default function Vocabulary() {
                   <div style={{ marginTop: '8px', padding: '8px', background: '#fff3cd', borderRadius: '4px', color: '#856404' }}>
                     <strong>To start gesture detection:</strong><br/>
                     1. Open terminal<br/>
-                    2. Run: <code style={{ background: '#fff', padding: '2px 6px', borderRadius: '3px' }}>cd /Users/ronald8931/Desktop/FYP-SL/cv_hands</code><br/>
-                    3. Run: <code style={{ background: '#fff', padding: '2px 6px', borderRadius: '3px' }}>python3 app_simple.py</code><br/>
+                    2. Run: <code style={{ background: '#fff', padding: '2px 6px', borderRadius: '3px' }}>cd c:\Users\User\Documents\GitHub\FYP-SignLanguage\cv_hands</code><br/>
+                    3. Run: <code style={{ background: '#fff', padding: '2px 6px', borderRadius: '3px' }}>python app_simple.py</code><br/>
                     <div style={{ marginTop: '6px', fontSize: '12px' }}>
-                      Server should start on <strong>http://localhost:5001</strong>
+                      Stream should be visible at <strong>http://localhost:5001/stream</strong>
                     </div>
                   </div>
                 </div>
               )}
             </div>
           </div>
-
-          {/* Match Display - Shows below camera when gesture matches selected word */}
-          {showDemo && selectedWord && gestureServiceOnline && gestureData.sequence_gesture_text && (
-            <div style={{
-              marginTop: '16px',
-              padding: '16px',
-              background: gestureData.sequence_gesture_text.toLowerCase() === selectedWord.word.toLowerCase() ? '#d4edda' : '#f8f9fa',
-              border: gestureData.sequence_gesture_text.toLowerCase() === selectedWord.word.toLowerCase() ? '2px solid #28a745' : '2px solid #ddd',
-              borderRadius: '8px',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              textAlign: 'center',
-              color: gestureData.sequence_gesture_text.toLowerCase() === selectedWord.word.toLowerCase() ? '#155724' : '#333'
-            }}>
-              <div>Selected Word: {selectedWord.word}</div>
-              <div>Sequence Gesture: {gestureData.sequence_gesture_text}</div>
-              {gestureData.sequence_gesture_text.toLowerCase() === selectedWord.word.toLowerCase() && (
-                <div style={{ 
-                  marginTop: '8px', 
-                  fontSize: '18px', 
-                  color: '#28a745',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}>
-                  <span>✓</span>
-                  <span>Match</span>
-                </div>
-              )}
-            </div>
-          )}
         </main>
       </section>
     </div>
