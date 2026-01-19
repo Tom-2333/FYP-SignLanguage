@@ -20,11 +20,15 @@ export default function Vocabulary() {
   const [dictionaryData, setDictionaryData] = useState({}) // Dictionary data fetched from API
   const [gestureServiceOnline, setGestureServiceOnline] = useState(false) // Python service reachability
   const [streamAvailable, setStreamAvailable] = useState(false) // Python MJPEG stream reachability
+<<<<<<< HEAD
   const [isDarkMode, setIsDarkMode] = useState(false) // Dark mode state
+=======
+>>>>>>> 69d7eac7168e98c6f7c9eff3b2b01aa5e8056b60
   const streamUrl = 'http://localhost:5001/stream'
   const userName = localStorage.getItem('userName') || 'User'
   const wordsPerPage = 10
 
+<<<<<<< HEAD
   // Load theme preference from localStorage
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme')
@@ -39,6 +43,8 @@ export default function Vocabulary() {
     localStorage.setItem('theme', !isDarkMode ? 'dark' : 'light')
   }
 
+=======
+>>>>>>> 69d7eac7168e98c6f7c9eff3b2b01aa5e8056b60
   // Fetch dictionary data from XAMPP API
   useEffect(() => {
     let active = true
@@ -486,8 +492,13 @@ export default function Vocabulary() {
                   <div style={{ marginTop: '8px', padding: '8px', background: '#fff3cd', borderRadius: '4px', color: '#856404' }}>
                     <strong>To start gesture detection:</strong><br/>
                     1. Open terminal<br/>
+<<<<<<< HEAD
                     2. Run: <code style={{ background: '#fff', padding: '2px 6px', borderRadius: '3px' }}>cd c:\Users\User\Documents\GitHub\FYP-SignLanguage\cv_hands</code><br/>
                     3. Run: <code style={{ background: '#fff', padding: '2px 6px', borderRadius: '3px' }}>python app_simple.py</code><br/>
+=======
+                    2. Run: <code style={{ background: '#fff', padding: '2px 6px', borderRadius: '3px' }}>cd /Users/ronald8931/Downloads/Test_demo-main/cv_hands</code><br/>
+                    3. Run: <code style={{ background: '#fff', padding: '2px 6px', borderRadius: '3px' }}>python3 app_simple.py</code><br/>
+>>>>>>> 69d7eac7168e98c6f7c9eff3b2b01aa5e8056b60
                     <div style={{ marginTop: '6px', fontSize: '12px' }}>
                       Stream should be visible at <strong>http://localhost:5001/stream</strong>
                     </div>
