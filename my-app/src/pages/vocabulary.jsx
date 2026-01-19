@@ -104,6 +104,14 @@ export default function Vocabulary() {
     }
   }, [])
 
+<<<<<<< HEAD
+=======
+  useEffect(() => {
+    if (!showDemo) return
+    setStreamAvailable(false)
+  }, [showDemo])
+
+>>>>>>> 69d7eac7168e98c6f7c9eff3b2b01aa5e8056b60
   // Ensure data is loaded before rendering
   if (!dictionaryData || Object.keys(dictionaryData).length === 0) {
     return <div>Loading... (Data Not Found/Server Error)</div>
@@ -410,6 +418,7 @@ export default function Vocabulary() {
               {detectedGesture && <span style={{ marginLeft: '10px', fontSize: '14px', color: '#4CAF50' }}>• {detectedGesture}</span>}
             </div>
             <div className="cam-wrap" style={{ position: 'relative' }}>
+<<<<<<< HEAD
               {showDemo && (
                 <img
                   src={streamUrl}
@@ -420,6 +429,16 @@ export default function Vocabulary() {
                   onError={() => setStreamAvailable(false)}
                 />
               )}
+=======
+              <img
+                src={showDemo ? streamUrl : ''}
+                alt="Camera stream"
+                className={streamAvailable ? 'live' : 'hidden'}
+                style={{ width: '100%', height: 'auto', backgroundColor: '#000', display: streamAvailable ? 'block' : 'none' }}
+                onLoad={() => setStreamAvailable(true)}
+                onError={() => setStreamAvailable(false)}
+              />
+>>>>>>> 69d7eac7168e98c6f7c9eff3b2b01aa5e8056b60
               {!streamAvailable && (
                 <div className="cam-placeholder">
                   <div style={{ fontSize: 28 }}>📷</div>
