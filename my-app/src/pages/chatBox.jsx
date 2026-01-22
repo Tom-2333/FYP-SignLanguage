@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { FaChevronRight, FaTrashAlt, FaCamera, FaKeyboard, FaSearch, FaHistory } from 'react-icons/fa'
 import { v4 as uuidv4 } from 'uuid'
+import './chatBox.css'
 
 export default function ChatBox() {
   const videoRef = useRef(null)
@@ -129,68 +130,6 @@ export default function ChatBox() {
           </button>
         </footer>
       </main>
-
-      <style jsx>{`
-        .chat-app { display: flex; height: 100vh; width: 100vw; overflow: hidden; font-family: sans-serif; background: #fff; }
-        
-        /* Sidebar 樣式 */
-        .app-sidebar { width: 300px; background: #f7f7f8; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
-        .sidebar-header { padding: 20px 15px; }
-        .search-bar { display: flex; align-items: center; background: white; padding: 10px 15px; border-radius: 8px; border: 1px solid #eee; }
-        .search-bar input { border: none; outline: none; margin-left: 10px; width: 100%; }
-        .history-container { flex: 1; overflow-y: auto; padding: 10px; }
-        .history-label { font-size: 13px; color: #888; margin-bottom: 12px; font-weight: bold; }
-        .history-card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid #eee; }
-        .history-card:hover { border-color: #10a37f; }
-
-        .app-main { flex: 1; display: flex; flex-direction: column; }
-        .main-nav { padding: 15px 25px; border-bottom: 1px solid #eee; font-weight: bold; }
-        .chat-messages { flex: 1; }
-
-        /* 視覺反饋區 */
-        .sign-visual-section { padding: 20px; background: #fff; display: flex; flex-direction: column; gap: 15px; }
-        
-        /* 【關鍵】加高 3 倍的 Bar */
-        .sign-status-bar.x3-height { 
-          width: 100%; 
-          height: 180px; /* 原本約 60px，現在加高到 180px */
-          background: #f9f9f9; 
-          border: 2px solid #10a37f; 
-          border-radius: 15px; 
-          display: flex; 
-          align-items: center; 
-          justify-content: center;
-          overflow-x: auto; /* 文字太長時可以橫向捲動 GIF */
-          padding: 10px;
-        }
-
-        /* GIF 序列排版 */
-        .gif-flex-container { display: flex; gap: 15px; padding: 0 10px; }
-        .gif-box-unit { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .gif-placeholder-img { 
-          width: 120px; height: 120px; background: #ddd; 
-          border-radius: 8px; display: flex; align-items: center; 
-          justify-content: center; font-size: 12px; font-weight: bold; color: #666;
-        }
-        .gif-label { font-size: 14px; font-weight: bold; color: #10a37f; }
-
-        /* 相機展示框比例正常 */
-        .main-display-box { 
-          width: 100%; height: 350px; background: #1a1a1a; border-radius: 15px; 
-          overflow: hidden; display: flex; justify-content: center; align-items: center;
-        }
-        .video-stream { width: 100%; height: 100%; object-fit: cover; }
-        .empty-visual { color: #555; text-align: center; }
-
-        /* 底部輸入控制 */
-        .control-footer { padding: 20px; display: flex; gap: 15px; align-items: center; border-top: 1px solid #eee; }
-        .main-input-group { flex: 1; background: #f0f0f0; border-radius: 25px; display: flex; padding: 5px 20px; align-items: center; }
-        .main-input-group input { flex: 1; border: none; outline: none; background: transparent; padding: 10px; }
-        .mode-toggle-btn { width: 50px; height: 50px; border-radius: 15px; border: none; background: #f0f0f0; cursor: pointer; font-size: 20px; }
-        .mode-toggle-btn.cam-active { background: #10a37f; color: white; }
-        .blinking { color: #ff4d4f; animation: blinker 1.5s linear infinite; }
-        @keyframes blinker { 50% { opacity: 0; } }
-      `}</style>
     </div>
   )
 }

@@ -21,6 +21,7 @@ export default function Vocabulary() {
   const [gestureServiceOnline, setGestureServiceOnline] = useState(false) // Python service reachability
   const [streamAvailable, setStreamAvailable] = useState(false) // Python MJPEG stream reachability
   const [isDarkMode, setIsDarkMode] = useState(false) // Dark mode state
+  const [wordSize, setWordSize] = useState('medium') // Word size state: small, medium, large
   const streamUrl = 'http://localhost:5001/stream'
   const userName = localStorage.getItem('userName') || 'User'
   const wordsPerPage = 10
@@ -269,16 +270,29 @@ export default function Vocabulary() {
               ✕
             </button>
           )}
+          {/* Word Size Selector */}
+          <div className="word-size-selector">
+            <select 
+              value={wordSize} 
+              onChange={(e) => setWordSize(e.target.value)}
+              className="word-size-dropdown"
+              aria-label="Select word size"
+            >
+              <option value="small">Small</option>
+              <option value="medium">Medium</option>
+              <option value="large">Large</option>
+            </select>
+          </div>
           {/* Search Suggestions Dropdown */}
           {showSuggestions && filteredWords.length > 0 && (
             <div className="search-suggestions">
               {filteredWords.slice(0, 10).map((word) => (
                 <div
                   key={word.id}
-                  className="suggestion-item"
+                  className={`suggestion-item word-size-${wordSize}`}
                   onClick={() => handleSuggestionClick(word)}
                 >
-                  <span className="suggestion-word">{word.word}</span>
+                  <span className={`suggestion-word word-size-${wordSize}`}>{word.word}</span>
                   <span className="suggestion-id">ID: {word.id}</span>
                 </div>
               ))}
@@ -300,7 +314,7 @@ export default function Vocabulary() {
             {categoryKeys.map(key => (
               <button
                 key={key}
-                className={`category-btn ${key === selectedCategory ? 'active' : ''} ${key === 'All' ? 'all-btn' : ''}`}
+                className={`category-btn word-size-${wordSize} ${key === selectedCategory ? 'active' : ''} ${key === 'All' ? 'all-btn' : ''}`}
                 onClick={() => handleCategoryClick(key)}
               >
                 {dictionaryData[key].name}
@@ -317,11 +331,11 @@ export default function Vocabulary() {
               <div className="box-title">
                 {currentCategoryData.name}
               </div>
-              <div className="word-grid">
+              <div className={`word-grid word-size-${wordSize}`}>
                 {currentWords.map((item) => (
                   <button
                     key={item.id}
-                    className={`word-btn ${selectedWord?.id === item.id ? 'selected' : ''}`}
+                    className={`word-btn word-size-${wordSize} ${selectedWord?.id === item.id ? 'selected' : ''}`}
                     onClick={() => handleWordClick(item)}
                   >
                     {item.word}
@@ -363,7 +377,7 @@ export default function Vocabulary() {
                 </div>
                 {selectedWord && (
                   <div className="card-meta">
-                    <h2>{selectedWord.word}</h2>
+                    <h2 className={`demo-word-title word-size-${wordSize}`}>{selectedWord.word}</h2>
                     <div className="translation">ID: {selectedWord.id}</div>
                     {/* Navigation Buttons */}
                     <div className="demo-nav-buttons">
@@ -460,17 +474,17 @@ export default function Vocabulary() {
               {gestureServiceOnline ? (
                 <>
                   {gestureData.sequence_gesture_text && (
-                    <div style={{ marginBottom: '4px' }}>
+                    <div style={{ marginBottom: '4px' }} className={`gesture-text word-size-${wordSize}`}>
                       <strong>Sequence:</strong> {gestureData.sequence_gesture_text}
                     </div>
                   )}
                   {gestureData.hand_sign_text && (
-                    <div style={{ marginBottom: '4px' }}>
+                    <div style={{ marginBottom: '4px' }} className={`gesture-text word-size-${wordSize}`}>
                       <strong>Hand Sign:</strong> {gestureData.hand_sign_text}
                     </div>
                   )}
                   {gestureData.finger_gesture_text && (
-                    <div style={{ marginBottom: '4px' }}>
+                    <div style={{ marginBottom: '4px' }} className={`gesture-text word-size-${wordSize}`}>
                       <strong>Details:</strong> {gestureData.finger_gesture_text}
                     </div>
                   )}
