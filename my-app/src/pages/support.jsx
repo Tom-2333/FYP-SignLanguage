@@ -25,7 +25,7 @@ export default function Support() {
             <p className="org-description">
               服務包括：諮詢、家庭支援、青年小組、聽力測試、助聽器服務、緊急支援資訊及家長資源。
             </p>
-            
+
             <div className="contact-info">
               <div className="contact-item">
                 <FaExternalLinkAlt />
@@ -55,7 +55,7 @@ export default function Support() {
             <p className="org-description">
               服務包括：權益倡導、社區活動、為聾人及弱聽人士及其家庭提供支援、手語相關工作、捐款資助計劃。
             </p>
-            
+
             <div className="contact-info">
               <div className="contact-item">
                 <FaExternalLinkAlt />
@@ -79,7 +79,7 @@ export default function Support() {
             <p className="org-description">
               香港聾人福利促進會轄下的青年網絡。專為主流學校的聾人/弱聽青年（約15-45歲）提供分享、活動及互助支援。
             </p>
-            
+
             <div className="contact-info">
               <div className="contact-item">
                 <FaExternalLinkAlt />
@@ -115,7 +115,7 @@ export default function Support() {
             <p className="org-description">
               政府資助中心，提供：個案工作及輔導、手語傳譯、耳模及技術服務、為聽障人士及其子女（25歲以下）提供聽力及言語治療服務。接受自行轉介。
             </p>
-            
+
             <div className="contact-info">
               <div className="contact-item">
                 <FaExternalLinkAlt />
@@ -137,7 +137,7 @@ export default function Support() {
             <p className="org-description">
               政府復康及殘疾支援服務的一般入口點（包括聽力障礙相關服務）。
             </p>
-            
+
             <div className="contact-info">
               <div className="contact-item">
                 <FaExternalLinkAlt />
@@ -155,7 +155,7 @@ export default function Support() {
             <p className="org-description">
               關於兒童復康及特殊教育需要（SEN）支援（包括聽力障礙）的資訊。
             </p>
-            
+
             <div className="contact-info">
               <div className="contact-item">
                 <FaExternalLinkAlt />
@@ -185,7 +185,7 @@ export default function Support() {
             <p className="org-description">
               在香港，聽障或語障人士可以在緊急情況下發送短訊至 <strong>992</strong> 聯絡警察/消防/救護服務。
             </p>
-            
+
             <div className="contact-info">
               <div className="contact-item emergency-contact">
                 <FaPhone />
@@ -211,7 +211,7 @@ export default function Support() {
             <p className="org-description">
               社會福利署/照顧者支援平台的24小時熱線，包括為聽障人士的照顧者提供建議並轉介至合適服務。
             </p>
-            
+
             <div className="contact-info">
               <div className="contact-item">
                 <FaPhone />
@@ -241,56 +241,7 @@ export default function Support() {
           </div>
         </section>
 
-        {/* References Section */}
-        <section className="support-section references-section">
-          <div className="section-title">
-            <h3>參考資料</h3>
-          </div>
-          <div className="references-list">
-            <ol>
-              <li>
-                <a href="https://www.deaf.org.hk/en/mission.php?utm_source=openai" target="_blank" rel="noopener noreferrer">
-                  The Hong Kong Society for the Deaf
-                </a>
-              </li>
-              <li>
-                <a href="https://www.hkdeaf.org/support-us-en/?utm_source=openai" target="_blank" rel="noopener noreferrer">
-                  Support Us – 香港聾人協進會
-                </a>
-              </li>
-              <li>
-                <a href="https://www.deaf.org.hk/en/gro_int_i3.php?utm_source=openai" target="_blank" rel="noopener noreferrer">
-                  The Hong Kong Society for the Deaf - HISN
-                </a>
-              </li>
-              <li>
-                <a href="https://www.swd.gov.hk/en/pubsvc/rehab/cat_supportcom/centrebase/multiservi/?utm_source=openai" target="_blank" rel="noopener noreferrer">
-                  Integrated Service Centre for Persons with Hearing Impairment
-                </a>
-              </li>
-              <li>
-                <a href="https://www.gov.hk/en/residents/health/rehab/?utm_source=openai" target="_blank" rel="noopener noreferrer">
-                  GovHK: Rehabilitation & Supports
-                </a>
-              </li>
-              <li>
-                <a href="https://www.dhcas.gov.hk/en/information_rehabilitation.html?utm_source=openai" target="_blank" rel="noopener noreferrer">
-                  DHCAS: Useful Resources
-                </a>
-              </li>
-              <li>
-                <a href="https://www.deaf.org.hk/en/deaf_info_details.php?utm_source=openai" target="_blank" rel="noopener noreferrer">
-                  The Hong Kong Society for the Deaf - Emergency Services
-                </a>
-              </li>
-              <li>
-                <a href="https://www.carers.hk/en-us/articles/1308?utm_source=openai" target="_blank" rel="noopener noreferrer">
-                  Hotline Service - Information Gateway for Carers
-                </a>
-              </li>
-            </ol>
-          </div>
-        </section>
+
       </div>
     </div>
   )

@@ -359,7 +359,7 @@ export default function Vocabulary() {
                 <div className="gif-area">
                   {selectedWord ? (
                     <img
-                      src={`http://localhost/SL-Database_api/video-webp/${selectedWord.id.padStart(8, '0')}-${selectedWord.word}.webp`}
+                      src={`http://localhost/SL-Database_api/video-webp/${selectedWord.id.padStart(8, '0')}.webp`}
                       alt={selectedWord.word}
                       className="sign-video"
                       onError={(e) => {
