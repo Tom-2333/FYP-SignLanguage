@@ -1,8 +1,26 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import './support.css'
 import { FaPhone, FaMapMarkerAlt, FaEnvelope, FaExternalLinkAlt, FaInfoCircle, FaHandsHelping, FaExclamationTriangle, FaHeartbeat } from 'react-icons/fa'
 
 export default function Support() {
+  useEffect(() => {
+    // Apply color mode from localStorage
+    const savedColorMode = localStorage.getItem('colorMode') || 'light'
+    if (savedColorMode === 'dark') {
+      document.body.classList.add('dark-mode')
+    } else {
+      document.body.classList.remove('dark-mode')
+    }
+
+    // Apply RG-CVD mode
+    const savedRgCvdMode = localStorage.getItem('rgCvdMode') === 'true'
+    if (savedRgCvdMode) {
+      document.body.classList.add('rg-cvd-mode')
+    } else {
+      document.body.classList.remove('rg-cvd-mode')
+    }
+  }, [])
+
   return (
     <div className="support-page">
       <div className="support-header">
@@ -25,7 +43,7 @@ export default function Support() {
             <p className="org-description">
               服務包括：諮詢、家庭支援、青年小組、聽力測試、助聽器服務、緊急支援資訊及家長資源。
             </p>
-
+            
             <div className="contact-info">
               <div className="contact-item">
                 <FaExternalLinkAlt />
@@ -55,7 +73,7 @@ export default function Support() {
             <p className="org-description">
               服務包括：權益倡導、社區活動、為聾人及弱聽人士及其家庭提供支援、手語相關工作、捐款資助計劃。
             </p>
-
+            
             <div className="contact-info">
               <div className="contact-item">
                 <FaExternalLinkAlt />
@@ -79,7 +97,7 @@ export default function Support() {
             <p className="org-description">
               香港聾人福利促進會轄下的青年網絡。專為主流學校的聾人/弱聽青年（約15-45歲）提供分享、活動及互助支援。
             </p>
-
+            
             <div className="contact-info">
               <div className="contact-item">
                 <FaExternalLinkAlt />
@@ -115,7 +133,7 @@ export default function Support() {
             <p className="org-description">
               政府資助中心，提供：個案工作及輔導、手語傳譯、耳模及技術服務、為聽障人士及其子女（25歲以下）提供聽力及言語治療服務。接受自行轉介。
             </p>
-
+            
             <div className="contact-info">
               <div className="contact-item">
                 <FaExternalLinkAlt />
@@ -137,7 +155,7 @@ export default function Support() {
             <p className="org-description">
               政府復康及殘疾支援服務的一般入口點（包括聽力障礙相關服務）。
             </p>
-
+            
             <div className="contact-info">
               <div className="contact-item">
                 <FaExternalLinkAlt />
@@ -155,7 +173,7 @@ export default function Support() {
             <p className="org-description">
               關於兒童復康及特殊教育需要（SEN）支援（包括聽力障礙）的資訊。
             </p>
-
+            
             <div className="contact-info">
               <div className="contact-item">
                 <FaExternalLinkAlt />
@@ -185,7 +203,7 @@ export default function Support() {
             <p className="org-description">
               在香港，聽障或語障人士可以在緊急情況下發送短訊至 <strong>992</strong> 聯絡警察/消防/救護服務。
             </p>
-
+            
             <div className="contact-info">
               <div className="contact-item emergency-contact">
                 <FaPhone />
@@ -211,7 +229,7 @@ export default function Support() {
             <p className="org-description">
               社會福利署/照顧者支援平台的24小時熱線，包括為聽障人士的照顧者提供建議並轉介至合適服務。
             </p>
-
+            
             <div className="contact-info">
               <div className="contact-item">
                 <FaPhone />
@@ -240,8 +258,6 @@ export default function Support() {
             </p>
           </div>
         </section>
-
-
       </div>
     </div>
   )

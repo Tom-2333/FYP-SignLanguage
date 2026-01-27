@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { FaBookOpen, FaComments, FaHandsHelping, FaBars, FaTimes, FaSignOutAlt } from 'react-icons/fa'
+import { FaBookOpen, FaComments, FaHandsHelping, FaCog, FaBars, FaTimes, FaSignOutAlt } from 'react-icons/fa'
 
 export default function BottomNav() {
   const [open, setOpen] = useState(false)
@@ -79,6 +79,11 @@ export default function BottomNav() {
           <NavLink to="/support" className={itemClass} onClick={() => setOpen(false)}>
             <FaHandsHelping className="nav-icon" aria-hidden />
             <span className="nav-label">Support</span>
+          </NavLink>
+
+          <NavLink to="/settings" className={itemClass} onClick={() => setOpen(false)}>
+            <FaCog className="nav-icon" aria-hidden />
+            <span className="nav-label">Settings</span>
           </NavLink>
 
           <button className="nav-item logout-btn" onClick={handleLogout}>

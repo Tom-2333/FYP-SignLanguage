@@ -1,6 +1,7 @@
 @echo off
 echo ========================================
 echo FYP Sign Language Project - CLEAN SETUP (Windows)
+echo FastAPI + React Setup
 echo ========================================
 
 REM Check Python installation
@@ -26,7 +27,7 @@ echo ========================================
 
 echo.
 echo [1.1] Uninstalling Python packages...
-pip uninstall -y opencv-python mediapipe numpy pillow tensorflow
+pip uninstall -y opencv-python mediapipe numpy pillow tensorflow fastapi uvicorn jax jaxlib
 pip uninstall -y opencv-python-headless opencv-contrib-python opencv-contrib-python-headless
 
 echo.
@@ -107,8 +108,8 @@ echo STEP 3: STARTING PROJECT
 echo ========================================
 
 echo.
-echo [3.1] Starting Python Flask server (cv_hands)...
-start "Python Flask Server" cmd /k "cd /d %CD%\cv_hands && python app_simple.py"
+echo [3.1] Starting Python FastAPI server (cv_hands)...
+start "Python FastAPI Server" cmd /k "cd /d %CD%\cv_hands && python app_simple.py"
 
 echo.
 echo [3.2] Waiting 5 seconds before starting React...
@@ -122,8 +123,14 @@ echo.
 echo ========================================
 echo CLEAN SETUP COMPLETE!
 echo ========================================
-echo Python Flask server: http://localhost:5000
+echo Python FastAPI server: http://localhost:5001
 echo React app: http://localhost:3000
+echo FastAPI Docs: http://localhost:5001/docs
+echo ========================================
+echo 🔍 Gesture endpoint: http://localhost:5001/gesture
+echo 📺 Stream endpoint: http://localhost:5001/stream
+echo 💚 Health check: http://localhost:5001/health
+echo 📖 Interactive API Docs: http://localhost:5001/docs (FastAPI feature!)
 echo ========================================
 echo Press any key to close this window...
 pause

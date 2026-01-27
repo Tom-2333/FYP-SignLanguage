@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import './vocabulary.css'
+import { Hands } from '@mediapipe/hands'
+import { Camera } from '@mediapipe/camera_utils'
 
 // Get confidence score for a word (currently hard-coded, will connect to API later)
 const getConfidence = (wordId) => {
@@ -9,6 +11,12 @@ const getConfidence = (wordId) => {
 }
 
 export default function Vocabulary() {
+  const videoRef = useRef(null)
+
+  const canvasRef = useRef(null)
+  const handsRef = useRef(null)
+  const cameraRef = useRef(null)
+  const [cameraAllowed, setCameraAllowed] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedWord, setSelectedWord] = useState(null)
@@ -17,28 +25,145 @@ export default function Vocabulary() {
   const [showSuggestions, setShowSuggestions] = useState(false) // Show search suggestions
   const [detectedGesture, setDetectedGesture] = useState('') // Detected hand gesture
   const [gestureData, setGestureData] = useState({}) // Detailed gesture data from Python API
+  const [handLandmarks, setHandLandmarks] = useState(null) // Hand landmarks data
   const [dictionaryData, setDictionaryData] = useState({}) // Dictionary data fetched from API
   const [gestureServiceOnline, setGestureServiceOnline] = useState(false) // Python service reachability
-  const [streamAvailable, setStreamAvailable] = useState(false) // Python MJPEG stream reachability
-  const [isDarkMode, setIsDarkMode] = useState(false) // Dark mode state
-  const [wordSize, setWordSize] = useState('medium') // Word size state: small, medium, large
-  const streamUrl = 'http://localhost:5001/stream'
+  const [streamError, setStreamError] = useState(false)
+  const frameThrottleRef = useRef(0) // Throttle MediaPipe frames to lower CPU
   const userName = localStorage.getItem('userName') || 'User'
+  const userId = localStorage.getItem('userId')
+  const [isCompleted, setIsCompleted] = useState(false)
+  const [colorMode, setColorMode] = useState(() => localStorage.getItem('colorMode') || 'light')
+  const [completedWordIds, setCompletedWordIds] = useState(new Set())
+  const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || '100%')
   const wordsPerPage = 10
+  const wordSize = fontSize === '90%' ? 'small' : fontSize === '125%' ? 'large' : 'medium'
+  const normalizedGestureText = (gestureData.sequence_gesture_text || '').toLowerCase()
+  const normalizedSelectedWord = (selectedWord?.word || '').toLowerCase()
+  const isMatch = Boolean(selectedWord && gestureData.sequence_gesture_text && normalizedGestureText === normalizedSelectedWord)
 
-  // Load theme preference from localStorage
+  // CRA (react-scripts) does not automatically serve MediaPipe's WASM/asset files from node_modules.
+  // Without a proper locateFile, MediaPipe will request assets from your app origin and often get
+  // index.html ("<"), causing "Unexpected token '<'" runtime errors.
+  const MEDIAPIPE_HANDS_VERSION = '0.4.1675469240'
+
+  // Hand connections (simplified - MediaPipe has 21 landmarks)
+  const HAND_CONNECTIONS = [
+    [0, 1], [1, 2], [2, 3], [3, 4], // Thumb
+    [0, 5], [5, 6], [6, 7], [7, 8], // Index
+    [5, 9], [9, 10], [10, 11], [11, 12], // Middle
+    [9, 13], [13, 14], [14, 15], [15, 16], // Ring
+    [13, 17], [17, 18], [18, 19], [19, 20], // Pinky
+    [0, 17] // Palm
+  ]
+
+  // Helper functions for drawing (simplified versions)
+  const drawConnectors = (ctx, landmarks, connections, style) => {
+    ctx.strokeStyle = style.color
+    ctx.lineWidth = style.lineWidth
+
+    for (const connection of connections) {
+      const [start, end] = connection
+      ctx.beginPath()
+      ctx.moveTo(
+        (1 - landmarks[start].x) * ctx.canvas.width,
+        landmarks[start].y * ctx.canvas.height
+      )
+      ctx.lineTo(
+        (1 - landmarks[end].x) * ctx.canvas.width,
+        landmarks[end].y * ctx.canvas.height
+      )
+      ctx.stroke()
+    }
+  }
+
+  const drawLandmarks = (ctx, landmarks, style) => {
+    ctx.fillStyle = style.color
+
+    for (const landmark of landmarks) {
+      ctx.beginPath()
+      ctx.arc(
+        (1 - landmark.x) * ctx.canvas.width,
+        landmark.y * ctx.canvas.height,
+        style.radius,
+        0,
+        2 * Math.PI
+      )
+      ctx.fill()
+    }
+  }
+
+  // Apply color mode from localStorage
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme')
-    if (savedTheme === 'dark') {
-      setIsDarkMode(true)
+    const savedColorMode = localStorage.getItem('colorMode') || 'light'
+    setColorMode(savedColorMode)
+    if (savedColorMode === 'dark') {
+      document.body.classList.add('dark-mode')
+    } else {
+      document.body.classList.remove('dark-mode')
+    }
+
+    // Apply RG-CVD mode
+    const savedRgCvdMode = localStorage.getItem('rgCvdMode') === 'true'
+    if (savedRgCvdMode) {
+      document.body.classList.add('rg-cvd-mode')
+    } else {
+      document.body.classList.remove('rg-cvd-mode')
     }
   }, [])
 
-  // Toggle dark mode
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode)
-    localStorage.setItem('theme', !isDarkMode ? 'dark' : 'light')
-  }
+  const onHandsResults = useCallback((results) => {
+    // Save canvas reference
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const canvasCtx = canvas.getContext('2d')
+    if (!canvasCtx) return
+
+    // Clear canvas
+    canvasCtx.save()
+    canvasCtx.clearRect(0, 0, canvas.width, canvas.height)
+
+    // Draw the video frame
+    if (results.image) {
+      canvasCtx.save()
+      canvasCtx.scale(-1, 1)
+      canvasCtx.drawImage(results.image, -canvas.width, 0, canvas.width, canvas.height)
+      canvasCtx.restore()
+    }
+
+    // Draw hand landmarks if detected
+    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+      for (const landmarks of results.multiHandLandmarks) {
+        drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
+          color: '#00FF00',
+          lineWidth: 3
+        })
+        drawLandmarks(canvasCtx, landmarks, {
+          color: '#FF0000',
+          lineWidth: 1,
+          radius: 3
+        })
+      }
+
+      // Store landmarks for gesture recognition
+      setHandLandmarks(results.multiHandLandmarks)
+
+      // Simple gesture detection (placeholder - you can expand this)
+      const numHands = results.multiHandLandmarks.length
+      if (numHands === 1) {
+        setDetectedGesture('One hand detected')
+      } else if (numHands === 2) {
+        setDetectedGesture('Two hands detected')
+      }
+    } else {
+      setHandLandmarks(null)
+      setDetectedGesture('No hands detected')
+    }
+
+    canvasCtx.restore()
+  }, [HAND_CONNECTIONS, drawConnectors, drawLandmarks])
+
 
   // Fetch dictionary data from XAMPP API
   useEffect(() => {
@@ -99,10 +224,88 @@ export default function Vocabulary() {
     }
   }, [])
 
+  // Fetch completed words for user
   useEffect(() => {
-    if (!showDemo) return
-    setStreamAvailable(false)
-  }, [showDemo])
+    if (!userId) return
+    let active = true
+    const fetchProgress = async () => {
+      try {
+        const response = await fetch(`http://localhost/SL-Database_api/get_user_progress.php?user_id=${encodeURIComponent(userId)}`)
+        if (!response.ok) throw new Error('Failed to fetch user progress')
+        const data = await response.json()
+        if (!active) return
+        if (data.success && Array.isArray(data.word_ids)) {
+          setCompletedWordIds(new Set(data.word_ids.map(String)))
+        }
+      } catch (error) {
+        if (error.name === 'AbortError') return
+        console.error('Error fetching user progress:', error)
+      }
+    }
+
+    fetchProgress()
+    return () => {
+      active = false
+    }
+  }, [userId])
+
+  // Check for word match and save progress
+  useEffect(() => {
+    console.log('Checking match', selectedWord?.word, gestureData.sequence_gesture_text, isCompleted, userId)
+    if (isMatch && !isCompleted && userId) {
+      console.log('Match found, saving progress')
+      setIsCompleted(true)
+      // Save to database
+      fetch('http://localhost/SL-Database_api/save_progress.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: parseInt(userId),
+          word_id: selectedWord.id,
+          confidence: getConfidence(selectedWord.id)
+        })
+      })
+        .then(response => {
+          console.log('Fetch response status:', response.status)
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+          return response.json()
+        })
+        .then(data => {
+          console.log('Save response:', data)
+          if (data.success) {
+            console.log('Progress saved successfully')
+            setCompletedWordIds(prev => {
+              const next = new Set(prev)
+              if (selectedWord?.id) next.add(String(selectedWord.id))
+              return next
+            })
+          } else {
+            console.error('Save failed:', data.error)
+          }
+        })
+        .catch(err => {
+          console.error('Save progress error:', err)
+        })
+    }
+  }, [isMatch, isCompleted, userId, selectedWord, gestureData])
+
+  // Reset completion when word changes
+  useEffect(() => {
+    if (!selectedWord) {
+      setIsCompleted(false)
+      return
+    }
+    const existsInProgress = completedWordIds.has(String(selectedWord.id))
+    setIsCompleted(existsInProgress || isMatch)
+  }, [selectedWord, completedWordIds, isMatch])
+
+  // Camera setup useEffect
+  useEffect(() => {
+    setCameraAllowed(false)
+    return () => { }
+  }, [onHandsResults])
 
   // Ensure data is loaded before rendering
   if (!dictionaryData || Object.keys(dictionaryData).length === 0) {
@@ -115,6 +318,10 @@ export default function Vocabulary() {
   const allWords = categoryKeys
     .filter(key => key !== 'All')
     .flatMap(key => dictionaryData[key].words)
+
+  const totalAllWords = allWords.length
+  const completedCount = allWords.filter(word => completedWordIds.has(String(word.id))).length
+  const completionRate = totalAllWords > 0 ? Math.round((completedCount / totalAllWords) * 100) : 0
 
   const currentCategoryData = selectedCategory === 'All'
     ? { name: 'All Words', words: allWords }
@@ -208,40 +415,31 @@ export default function Vocabulary() {
   }
 
   return (
-    <div className={`vocab-container ${isDarkMode ? 'dark-mode' : ''}`}>
+    <div
+      className={`vocab-container ${fontSize === '90%' ? 'font-size-90' : fontSize === '125%' ? 'font-size-125' : 'font-size-100'}`}
+      data-theme={colorMode}
+    >
       <header className="vocab-header">
         <div className="vocab-progress">
-          <span>Recognition Rate</span>
+          <span className={`progress-label word-size-${wordSize}`}>Recognition Rate</span>
           <div className="vocab-progress-bar" aria-hidden>
-            <div className="vocab-progress-fill" style={{ width: `${selectedWord ? getConfidence(selectedWord.id) : 0}%` }} />
+            <div className="vocab-progress-fill" style={{ width: `${completionRate}%` }} />
           </div>
-          <span>{selectedWord ? getConfidence(selectedWord.id) : 0}%</span>
+          <span className={`progress-value word-size-${wordSize}`}>{completionRate}%</span>
         </div>
-        <div className="vocab-greeting">Hello, {userName}! </div>
-        {/* Theme Toggle Button */}
-        <button 
-          className="theme-toggle" 
-          onClick={toggleDarkMode}
-          aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-        >
-          {isDarkMode ? (
-            <span className="sun-icon">☀️</span>
-          ) : (
-            <span className="moon-icon">🌙</span>
-          )}
-        </button>
+        <div className={`vocab-greeting word-size-${wordSize}`}>Hello, {userName}! </div>
       </header>
 
       {/* Progress and Selected Word Info */}
       <div className="vocab-info-bar">
         <div className="info-item">
-          <span className="info-label">Progress:</span>
-          <span className="info-value">{selectedWord ? `${currentCategoryData.words.findIndex(w => w.id === selectedWord.id) + 1}/${currentCategoryData.words.length}` : `0/${currentCategoryData.words.length}`}</span>
+          <span className={`info-label word-size-${wordSize}`}>Progress:</span>
+          <span className={`info-value word-size-${wordSize}`}>{selectedWord ? `${currentCategoryData.words.findIndex(w => w.id === selectedWord.id) + 1}/${currentCategoryData.words.length}` : `0/${currentCategoryData.words.length}`}</span>
         </div>
         {selectedWord && (
           <div className="info-item">
-            <span className="info-label">Selected Word:</span>
-            <span className="info-value selected-word-name">{selectedWord.word}</span>
+            <span className={`info-label word-size-${wordSize}`}>Selected Word:</span>
+            <span className={`info-value selected-word-name word-size-${wordSize}`}>{selectedWord.word}</span>
           </div>
         )}
         <div className="search-container">
@@ -258,6 +456,7 @@ export default function Vocabulary() {
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             className="search-input"
           />
+
           {searchQuery && (
             <button
               className="clear-search"
@@ -270,29 +469,16 @@ export default function Vocabulary() {
               ✕
             </button>
           )}
-          {/* Word Size Selector */}
-          <div className="word-size-selector">
-            <select 
-              value={wordSize} 
-              onChange={(e) => setWordSize(e.target.value)}
-              className="word-size-dropdown"
-              aria-label="Select word size"
-            >
-              <option value="small">Small</option>
-              <option value="medium">Medium</option>
-              <option value="large">Large</option>
-            </select>
-          </div>
           {/* Search Suggestions Dropdown */}
           {showSuggestions && filteredWords.length > 0 && (
             <div className="search-suggestions">
               {filteredWords.slice(0, 10).map((word) => (
                 <div
                   key={word.id}
-                  className={`suggestion-item word-size-${wordSize}`}
+                  className="suggestion-item"
                   onClick={() => handleSuggestionClick(word)}
                 >
-                  <span className={`suggestion-word word-size-${wordSize}`}>{word.word}</span>
+                  <span className="suggestion-word">{word.word}</span>
                   <span className="suggestion-id">ID: {word.id}</span>
                 </div>
               ))}
@@ -304,9 +490,62 @@ export default function Vocabulary() {
             </div>
           )}
         </div>
-      </div>
+        <div className="font-size-controls">
+            <button
+              type="button"
+            className={`font-size-btn size-small ${fontSize === '90%' ? 'active' : ''}`}
+              onClick={() => {
+                setFontSize('90%')
+                localStorage.setItem('fontSize', '90%')
+              }}
+              title="Small (90%)"
+            >
+              aa
+            </button>
+            <button
+              type="button"
+            className={`font-size-btn size-normal ${fontSize === '100%' ? 'active' : ''}`}
+              onClick={() => {
+                setFontSize('100%')
+                localStorage.setItem('fontSize', '100%')
+              }}
+              title="Normal (100%)"
+            >
+              Aa
+            </button>
+            <button
+              type="button"
+            className={`font-size-btn size-large ${fontSize === '125%' ? 'active' : ''}`}
+              onClick={() => {
+                setFontSize('125%')
+                localStorage.setItem('fontSize', '125%')
+              }}
+              title="Large (125%)"
+            >
+              AA
+            </button>
+          </div>
+          <button
+            type="button"
+            className="theme-toggle"
+            onClick={() => {
+              const nextMode = colorMode === 'light' ? 'dark' : 'light'
+              setColorMode(nextMode)
+              localStorage.setItem('colorMode', nextMode)
+              if (nextMode === 'dark') {
+                document.body.classList.add('dark-mode')
+              } else {
+                document.body.classList.remove('dark-mode')
+              }
+            }}
+            aria-label={colorMode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+            title={colorMode === 'light' ? 'Dark mode' : 'Light mode'}
+          >
+            {colorMode === 'light' ? '🌙' : '☀️'}
+          </button>
+        </div>
 
-      <section className="vocab-main">
+        <section className="vocab-main">
         {/* Category Buttons */}
         <aside className="vocab-sidebar combined">
           <h3>Categories</h3>
@@ -314,7 +553,7 @@ export default function Vocabulary() {
             {categoryKeys.map(key => (
               <button
                 key={key}
-                className={`category-btn word-size-${wordSize} ${key === selectedCategory ? 'active' : ''} ${key === 'All' ? 'all-btn' : ''}`}
+                className={`category-btn ${key === selectedCategory ? 'active' : ''} ${key === 'All' ? 'all-btn' : ''}`}
                 onClick={() => handleCategoryClick(key)}
               >
                 {dictionaryData[key].name}
@@ -331,11 +570,11 @@ export default function Vocabulary() {
               <div className="box-title">
                 {currentCategoryData.name}
               </div>
-              <div className={`word-grid word-size-${wordSize}`}>
+              <div className="word-grid">
                 {currentWords.map((item) => (
                   <button
                     key={item.id}
-                    className={`word-btn word-size-${wordSize} ${selectedWord?.id === item.id ? 'selected' : ''}`}
+                    className={`word-btn ${selectedWord?.id === item.id ? 'selected' : ''} ${completedWordIds.has(String(item.id)) ? 'completed' : ''}`}
                     onClick={() => handleWordClick(item)}
                   >
                     {item.word}
@@ -359,7 +598,7 @@ export default function Vocabulary() {
                 <div className="gif-area">
                   {selectedWord ? (
                     <img
-                      src={`http://localhost/SL-Database_api/video-webp/${selectedWord.id.padStart(8, '0')}.webp`}
+                      src={`http://localhost/SL-Database_api/video-webp/${selectedWord.id.padStart(8, '0')}-${selectedWord.word}.webp`}
                       alt={selectedWord.word}
                       className="sign-video"
                       onError={(e) => {
@@ -371,13 +610,14 @@ export default function Vocabulary() {
                   ) : (
                     <div className="placeholder-text">Select a word to view sign</div>
                   )}
-                  <div className="placeholder-text" style={{ display: 'none' }}>
+                  <div className="placeholder-text hidden">
                     Video not available
                   </div>
                 </div>
                 {selectedWord && (
                   <div className="card-meta">
                     <h2 className={`demo-word-title word-size-${wordSize}`}>{selectedWord.word}</h2>
+                    {isCompleted && <div className="completion-status">Completed</div>}
                     <div className="translation">ID: {selectedWord.id}</div>
                     {/* Navigation Buttons */}
                     <div className="demo-nav-buttons">
@@ -417,104 +657,110 @@ export default function Vocabulary() {
           )}
 
           {/* Camera Box - Always rendered, but hidden when not in demo view */}
-          <div className="vocab-card cam-box" style={{ display: showDemo ? 'block' : 'none' }}>
+          <div className={`vocab-card cam-box ${showDemo ? '' : 'is-hidden'}`}>
             <div className="box-title">
-              Your Sign (Python Stream)
-              {detectedGesture && <span style={{ marginLeft: '10px', fontSize: '14px', color: '#4CAF50' }}>• {detectedGesture}</span>}
+              Your Sign (Camera)
+              {detectedGesture && <span className="detected-gesture">• {detectedGesture}</span>}
             </div>
-            <div className="cam-wrap" style={{ position: 'relative' }}>
-              {showDemo && (
-                <img
-                  src={streamUrl}
-                  alt="Camera stream"
-                  className={streamAvailable ? 'live' : 'hidden'}
-                  style={{ width: '100%', height: 'auto', backgroundColor: '#000', display: streamAvailable ? 'block' : 'none' }}
-                  onLoad={() => setStreamAvailable(true)}
-                  onError={() => setStreamAvailable(false)}
-                />
-              )}
-              {!streamAvailable && (
+            <div className="cam-wrap">
+              <img
+                src="http://localhost:5001/stream"
+                alt="Camera Stream"
+                className="live"
+                onLoad={() => {
+                  setStreamError(false)
+                  setCameraAllowed(true)
+                }}
+                onError={() => {
+                  setStreamError(true)
+                  setCameraAllowed(false)
+                  setDetectedGesture('Camera stream unavailable')
+                }}
+              />
+              {streamError && (
                 <div className="cam-placeholder">
-                  <div style={{ fontSize: 28 }}>📷</div>
-                  <div>Stream Unavailable</div>
-                  <small>Check http://localhost:5001/stream</small>
+                  <div className="cam-placeholder-icon">📷</div>
+                  <div>Camera Feed</div>
+                  <small>Allow camera permission to practice</small>
+                </div>
+              )}
+              {handLandmarks && (
+                <div className="hand-detected-badge">
+                  Hands detected: {handLandmarks.length}
                 </div>
               )}
             </div>
             {/* Gesture Detection Results */}
-            <div style={{
-              padding: '12px',
-              background: '#f5f5f5',
-              borderTop: '1px solid #ddd',
-              fontSize: '14px'
-            }}>
-              <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#333', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="gesture-results">
+              <div className="gesture-header">
                 <span>Gesture Recognition:</span>
-                <span style={{ 
-                  fontSize: '11px', 
-                  padding: '2px 8px', 
-                  borderRadius: '12px',
-                  backgroundColor: gestureServiceOnline ? '#d4edda' : '#f8d7da',
-                  color: gestureServiceOnline ? '#155724' : '#721c24',
-                  fontWeight: 'normal'
-                }}>
+                <span className={`gesture-status ${gestureServiceOnline ? 'online' : 'offline'}`}>
                   {gestureServiceOnline ? '● Connected' : '● Offline - Run app.py'}
-                </span>
-                <span style={{ 
-                  fontSize: '11px', 
-                  padding: '2px 8px', 
-                  borderRadius: '12px',
-                  backgroundColor: streamAvailable ? '#d4edda' : '#f8d7da',
-                  color: streamAvailable ? '#155724' : '#721c24',
-                  fontWeight: 'normal'
-                }}>
-                  {streamAvailable ? '● Stream' : '● Stream Offline'}
                 </span>
               </div>
               {gestureServiceOnline ? (
                 <>
                   {gestureData.sequence_gesture_text && (
-                    <div style={{ marginBottom: '4px' }} className={`gesture-text word-size-${wordSize}`}>
+                    <div className={`gesture-line gesture-text word-size-${wordSize}`}>
                       <strong>Sequence:</strong> {gestureData.sequence_gesture_text}
                     </div>
                   )}
                   {gestureData.hand_sign_text && (
-                    <div style={{ marginBottom: '4px' }} className={`gesture-text word-size-${wordSize}`}>
+                    <div className={`gesture-line gesture-text word-size-${wordSize}`}>
                       <strong>Hand Sign:</strong> {gestureData.hand_sign_text}
                     </div>
                   )}
-                  {gestureData.finger_gesture_text && (
-                    <div style={{ marginBottom: '4px' }} className={`gesture-text word-size-${wordSize}`}>
-                      <strong>Details:</strong> {gestureData.finger_gesture_text}
-                    </div>
-                  )}
-                  {gestureData.handedness && (
-                    <div style={{ marginBottom: '4px' }}>
-                      <strong>Hand:</strong> {gestureData.handedness}
+                  {/* Display All detected hands */}
+                  {gestureData.hands && gestureData.hands.length > 0 && (
+                    <div className="detected-hands">
+                      <strong>Detected {gestureData.hands.length} hands:</strong>
+                      {gestureData.hands.map((hand, index) => (
+                        <div key={index} className="detected-hand-row">
+                          <span className={`hand-badge ${hand.hand === 'Left' ? 'left' : 'right'}`}>
+                            {hand.hand === 'Left' ? '👈 Left Hand' : '👉 Right Hand'}
+                          </span>
+                          <span>{hand.gesture || '(No Gesture)'}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
                   {gestureData.fps && (
-                    <div style={{ fontSize: '12px', color: '#666' }}>
+                    <div className="fps-text">
                       FPS: {gestureData.fps}
                     </div>
                   )}
                 </>
               ) : (
-                <div style={{ color: '#666', fontSize: '13px' }}>
-                  Connecting to gesture detection server...<br/>
-                  <div style={{ marginTop: '8px', padding: '8px', background: '#fff3cd', borderRadius: '4px', color: '#856404' }}>
-                    <strong>To start gesture detection:</strong><br/>
-                    1. Open terminal<br/>
-                    2. Run: <code style={{ background: '#fff', padding: '2px 6px', borderRadius: '3px' }}>cd c:\Users\User\Documents\GitHub\FYP-SignLanguage\cv_hands</code><br/>
-                    3. Run: <code style={{ background: '#fff', padding: '2px 6px', borderRadius: '3px' }}>python app_simple.py</code><br/>
-                    <div style={{ marginTop: '6px', fontSize: '12px' }}>
-                      Stream should be visible at <strong>http://localhost:5001/stream</strong>
+                <div className="gesture-offline">
+                  Connecting to gesture detection server...<br />
+                  <div className="gesture-offline-box">
+                    <strong>To start gesture detection (FastAPI):</strong><br />
+                    1. Open terminal<br />
+                    2. Run: <code className="inline-code">cd /Users/ronald8931/Desktop/FYP-SL_conn_POE/cv_hands</code><br />
+                    3. Run: <code className="inline-code">python3 app_simple.py</code><br />
+                    <div className="gesture-offline-note">
+                      FastAPI server will start on <strong>http://localhost:5001</strong><br />
+                      API Docs available at <strong>http://localhost:5001/docs</strong>
                     </div>
                   </div>
                 </div>
               )}
             </div>
           </div>
+
+          {/* Match Display - Shows below camera when gesture matches selected word */}
+          {showDemo && selectedWord && gestureServiceOnline && gestureData.sequence_gesture_text && (
+            <div className={`match-display ${isMatch ? 'is-match' : ''}`}>
+              <div>Selected Word: {selectedWord.word}</div>
+              <div>Sequence Gesture: {gestureData.sequence_gesture_text}</div>
+              {isMatch && (
+                <div className="match-badge">
+                  <span>✓</span>
+                  <span>Match</span>
+                </div>
+              )}
+            </div>
+          )}
         </main>
       </section>
     </div>

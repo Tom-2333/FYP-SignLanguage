@@ -28,22 +28,47 @@ export default function Auth({ mode = 'login' }) {
     }
 
     setLoading(true)
-    // Mock async auth call
-    setTimeout(() => {
-      setLoading(false)
-      // For demo, register always succeeds; login succeeds if password is 'password123'
-      if (view === 'login' && password !== 'password123') {
-        setError('Invalid credentials (demo: use password123)')
-        return
+    try {
+      const response = await fetch('http://localhost/SL-Database_api/login.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: view,
+          email,
+          username: name,
+          password,
+        }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        if (view === 'register') {
+          setView('login')
+          setName('')
+          setEmail('')
+          setPassword('')
+          // setError('Registration successful! Please log in.')
+        } else {
+          // Store user information in localStorage
+          localStorage.setItem('isAuthenticated', 'true')
+          localStorage.setItem('userName', data.username)
+          localStorage.setItem('userId', data.user_id)
+          localStorage.setItem('user', JSON.stringify({
+            nickname: data.username,
+            email: email,
+            userId: data.user_id
+          }))
+          navigate('/vocabulary')
+        }
+      } else {
+        setError(data.error || 'Authentication failed')
       }
-
-      // Save login state and username
-      localStorage.setItem('isAuthenticated', 'true')
-      localStorage.setItem('userName', name || email.split('@')[0])
-      
-      // On success navigate to vocabulary
-      navigate('/vocabulary')
-    }, 900)
+    } catch (err) {
+      setError('Network error. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

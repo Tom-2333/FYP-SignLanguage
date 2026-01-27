@@ -1,4 +1,5 @@
-
+-- Drop database if exists
+DROP DATABASE IF EXISTS SL_db;
 
 -- Create database
 CREATE DATABASE SL_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

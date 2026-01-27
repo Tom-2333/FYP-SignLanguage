@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from pathlib import Path
 import numpy as np
 import tensorflow as tf
 
@@ -11,9 +10,6 @@ class KeyPointClassifier(object):
         model_path='model/keypoint_classifier/keypoint_classifier.tflite',
         num_threads=1,
     ):
-        if not Path(model_path).is_absolute():
-            cv_hands_dir = Path(__file__).resolve().parents[2]
-            model_path = str(cv_hands_dir / model_path)
         self.interpreter = tf.lite.Interpreter(model_path=model_path,
                                                num_threads=num_threads,
                                                experimental_delegates=[])
