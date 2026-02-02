@@ -309,7 +309,7 @@ export default function ChatBox() {
                   {/* This corresponds to the combined gif1 + gif2 logic at the bottom of Figure 3 */}
                   {input.split(' ').map((word, i) => (
                     <div key={i} className="gif-box-unit">
-                      <div className="gif-placeholder-img">GIF</div>
+                      <div className="gif-placeholder-img">WEBP</div>
                       <span className="gif-label">{word}</span>
                     </div>
                   ))}
@@ -318,7 +318,7 @@ export default function ChatBox() {
                 <div className="gif-flex-container">
                   {signWords.map((word, i) => (
                     <div key={i} className="gif-box-unit">
-                      <div className="gif-placeholder-img">GIF</div>
+                      <div className="gif-placeholder-img">WEBP</div>
                       <span className="gif-label">{word}</span>
                     </div>
                   ))}
