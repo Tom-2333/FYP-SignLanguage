@@ -196,7 +196,7 @@
 
 /* Demo Box */
 .demo-box .gif-area{flex:1;background:var(--video-surface);color:var(--text-muted);display:flex;align-items:center;justify-content:center;font-size:18px;position:relative;overflow:hidden}
-.sign-video{width:100%;height:100%;object-fit:cover;}
+.sign-video{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;}
 .placeholder-text{display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:16px}
 .placeholder-text.hidden{display:none}
 .card-meta{padding:16px;background:var(--surface)}
@@ -217,12 +217,12 @@
 .controls button.primary{background:var(--accent);color:var(--on-accent);border:none}
 
 /* Camera Box */
-.cam-box{display:flex;flex-direction:column;height:600px}
+.cam-box{display:flex;flex-direction:column;height:100%}
 .cam-box.is-hidden{display:none}
-.cam-box .cam-wrap{flex:1;position:relative;background:var(--video-surface);min-height:0;display:flex;align-items:center;justify-content:center}
-.cam-wrap video.live{width:100%;height: 600px;object-fit:cover;display:block}
+.cam-box .cam-wrap{flex:1;position:relative;background:var(--video-surface);min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.cam-wrap video.live{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
 .cam-wrap video.hidden{display:none}
-.cam-wrap img.live{width:100%;height:100%;object-fit:cover;display:block}
+.cam-wrap img.live{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
 .cam-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-muted);gap:8px}
 .cam-placeholder-icon{font-size:28px}
 .detected-gesture{margin-left:10px;font-size:14px;color:var(--success)}

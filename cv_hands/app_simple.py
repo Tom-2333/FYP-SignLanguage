@@ -53,10 +53,11 @@ mp_drawing = mp.solutions.drawing_utils
 
 IS_WINDOWS = platform.system().lower().startswith("win")
 TARGET_FPS = int(os.getenv("TARGET_FPS", "30"))
-ENABLE_FACE_POSE = os.getenv("ENABLE_FACE_POSE", "1" if not IS_WINDOWS else "0") == "1"
-FACE_POSE_INTERVAL = int(os.getenv("FACE_POSE_INTERVAL", "1" if not IS_WINDOWS else "3"))
-HANDS_MODEL_COMPLEXITY = int(os.getenv("HANDS_MODEL_COMPLEXITY", "0" if IS_WINDOWS else "1"))
-POSE_MODEL_COMPLEXITY = int(os.getenv("POSE_MODEL_COMPLEXITY", "0" if IS_WINDOWS else "1"))
+# Precision-first defaults (can be overridden by env vars)
+ENABLE_FACE_POSE = os.getenv("ENABLE_FACE_POSE", "1") == "1"
+FACE_POSE_INTERVAL = int(os.getenv("FACE_POSE_INTERVAL", "1"))
+HANDS_MODEL_COMPLEXITY = int(os.getenv("HANDS_MODEL_COMPLEXITY", "1"))
+POSE_MODEL_COMPLEXITY = int(os.getenv("POSE_MODEL_COMPLEXITY", "1"))
 
 hands = mp_hands.Hands(
     static_image_mode=False,
