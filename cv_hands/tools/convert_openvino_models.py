@@ -16,11 +16,13 @@ MODEL_SPECS = [
         "name": "keypoint_classifier",
         "tflite": MODEL_DIR / "keypoint_classifier.tflite",
         "keras": MODEL_DIR / "keypoint_classifier.keras",
+        "saved_model": MODEL_DIR / "keypoint_classifier_savedmodel",
     },
     {
         "name": "keypoint_sequence_classifier",
         "tflite": MODEL_DIR / "keypoint_sequence_classifier.tflite",
         "keras": MODEL_DIR / "keypoint_sequence_classifier.keras",
+        "saved_model": MODEL_DIR / "keypoint_sequence_classifier_savedmodel",
     },
 ]
 
@@ -75,6 +77,15 @@ def main():
                 print(f"TFLite conversion failed for {tflite_path.name}: {exc}")
         else:
             print(f"Skip: {tflite_path} not found")
+
+        saved_model_dir = spec.get("saved_model")
+        if saved_model_dir and saved_model_dir.exists():
+            try:
+                run_mo(saved_model_dir, output_dir, model_name)
+                print(f"Converted: {saved_model_dir.name} -> {model_name}.xml/.bin")
+                continue
+            except subprocess.CalledProcessError as exc:
+                print(f"SavedModel conversion failed for {saved_model_dir.name}: {exc}")
 
         if keras_path.exists():
             try:
