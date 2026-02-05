@@ -51,12 +51,11 @@ mp_face_mesh = mp.solutions.face_mesh
 mp_pose = mp.solutions.pose
 mp_drawing = mp.solutions.drawing_utils
 
-IS_WINDOWS = platform.system().lower().startswith("win")
 TARGET_FPS = int(os.getenv("TARGET_FPS", "30"))
-ENABLE_FACE_POSE = os.getenv("ENABLE_FACE_POSE", "1" if not IS_WINDOWS else "0") == "1"
-FACE_POSE_INTERVAL = int(os.getenv("FACE_POSE_INTERVAL", "1" if not IS_WINDOWS else "3"))
-HANDS_MODEL_COMPLEXITY = int(os.getenv("HANDS_MODEL_COMPLEXITY", "0" if IS_WINDOWS else "1"))
-POSE_MODEL_COMPLEXITY = int(os.getenv("POSE_MODEL_COMPLEXITY", "0" if IS_WINDOWS else "1"))
+ENABLE_FACE_POSE = os.getenv("ENABLE_FACE_POSE", "1") == "1"
+FACE_POSE_INTERVAL = int(os.getenv("FACE_POSE_INTERVAL", "1"))
+HANDS_MODEL_COMPLEXITY = int(os.getenv("HANDS_MODEL_COMPLEXITY", "1"))
+POSE_MODEL_COMPLEXITY = int(os.getenv("POSE_MODEL_COMPLEXITY", "1"))
 
 hands = mp_hands.Hands(
     static_image_mode=False,
@@ -69,7 +68,7 @@ hands = mp_hands.Hands(
 face_mesh = mp_face_mesh.FaceMesh(
     static_image_mode=False,
     max_num_faces=1,
-    refine_landmarks=False if IS_WINDOWS else True,
+    refine_landmarks=True,
     min_detection_confidence=0.8,
     min_tracking_confidence=0.6
 )

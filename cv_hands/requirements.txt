@@ -5,5 +5,5 @@ pillow==10.0.0
 tensorflow==2.13.0
 fastapi==0.100.0
 uvicorn==0.23.0
-jax==0.4.13
-jaxlib==0.4.13
+jax
+jaxlib
