@@ -4,6 +4,16 @@ import numpy as np
 import tensorflow as tf
 import os
 
+_THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+_CV_HANDS_DIR = os.path.abspath(os.path.join(_THIS_DIR, "..", ".."))
+
+
+def _resolve_model_path(model_path):
+    if os.path.isabs(model_path):
+        return model_path
+    candidate = os.path.join(_CV_HANDS_DIR, model_path)
+    return candidate if os.path.exists(candidate) else model_path
+
 try:
     from openvino.runtime import Core
     _OPENVINO_AVAILABLE = True
@@ -12,6 +22,7 @@ except Exception:
 
 
 def _resolve_openvino_model_path(model_path):
+    model_path = _resolve_model_path(model_path)
     if model_path.lower().endswith(".xml"):
         return model_path
     base, _ = os.path.splitext(model_path)
@@ -27,6 +38,8 @@ class KeyPointSequenceClassifier(object):
         use_openvino=None,
         openvino_device=None,
     ):
+        model_path = _resolve_model_path(model_path)
+
         if not os.path.exists(model_path):
             self.interpreter = None
             self.use_openvino = False

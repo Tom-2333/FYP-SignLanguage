@@ -17,6 +17,14 @@ import os
 from model import KeyPointClassifier, KeyPointSequenceClassifier
 from utils import CvFpsCalc
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def resolve_path(path):
+    if os.path.isabs(path):
+        return path
+    return os.path.join(BASE_DIR, path)
+
 
 def draw_chinese_text(image, text, position, font_size=20, color=(255, 255, 255), bold=False):
 
@@ -121,14 +129,14 @@ def main():
     keypoint_sequence_classifier = KeyPointSequenceClassifier()
 
     # Read labels
-    with open('Word-Label/keypoint_classifier_label.csv',
+    with open(resolve_path('Word-Label/keypoint_classifier_label.csv'),
               encoding='utf-8-sig') as f:
         keypoint_classifier_labels = csv.reader(f)
         keypoint_classifier_labels = [
             row[0] for row in keypoint_classifier_labels
         ]
     try:
-        with open('Word-Label/keypoint_sequence_classifier_label.csv',
+        with open(resolve_path('Word-Label/keypoint_sequence_classifier_label.csv'),
                   encoding='utf-8-sig') as f:
             keypoint_sequence_classifier_labels = csv.reader(f)
             keypoint_sequence_classifier_labels = [
