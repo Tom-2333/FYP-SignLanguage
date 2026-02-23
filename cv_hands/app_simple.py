@@ -89,6 +89,8 @@ keypoint_classifier = KeyPointClassifier(
 keypoint_sequence_classifier = KeyPointSequenceClassifier(
     model_path=os.path.join(SCRIPT_DIR, 'model/keypoint_classifier/keypoint_sequence_classifier.tflite')
 )
+print(f"🧠 Hand classifier backend: {getattr(keypoint_classifier, 'backend', 'unknown')}")
+print(f"🧠 Sequence classifier backend: {getattr(keypoint_sequence_classifier, 'backend', 'unknown')}")
 
 # Read labels with absolute paths
 with open(os.path.join(SCRIPT_DIR, 'Word-Label/keypoint_classifier_label.csv'), encoding='utf-8-sig') as f:

@@ -3,6 +3,7 @@
 import numpy as np
 import tensorflow as tf
 import os
+import platform
 
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 _CV_HANDS_DIR = os.path.abspath(os.path.join(_THIS_DIR, "..", ".."))
@@ -30,6 +31,26 @@ def _resolve_openvino_model_path(model_path):
     return xml_path if os.path.exists(xml_path) else model_path
 
 
+def _should_use_openvino(model_path, explicit_use_openvino):
+    if explicit_use_openvino is not None:
+        return bool(explicit_use_openvino)
+
+    backend = os.getenv("INFERENCE_BACKEND", "auto").strip().lower()
+    if backend in ("openvino", "ov"):
+        return True
+    if backend in ("tflite", "tf", "tensorflow"):
+        return False
+
+    legacy_flag = os.getenv("USE_OPENVINO")
+    if legacy_flag is not None:
+        return legacy_flag == "1"
+
+    # Auto mode: prefer OpenVINO on Windows when IR model exists.
+    is_windows = platform.system().lower().startswith("win")
+    ov_model_path = _resolve_openvino_model_path(model_path)
+    return bool(is_windows and ov_model_path.lower().endswith(".xml") and os.path.exists(ov_model_path))
+
+
 class KeyPointClassifier(object):
     def __init__(
         self,
@@ -38,13 +59,13 @@ class KeyPointClassifier(object):
         use_openvino=None,
         openvino_device=None,
     ):
-        if use_openvino is None:
-            use_openvino = os.getenv("USE_OPENVINO", "0") == "1"
-        self.use_openvino = bool(use_openvino and _OPENVINO_AVAILABLE)
+        self.interpreter = None
+        self.use_openvino = bool(_should_use_openvino(model_path, use_openvino) and _OPENVINO_AVAILABLE)
         self.openvino_device = openvino_device or os.getenv("OPENVINO_DEVICE", "GPU")
         self.ov_compiled = None
         self.ov_input = None
         self.ov_outputs = None
+        self.backend = "tflite"
 
         model_path = _resolve_model_path(model_path)
 
@@ -59,6 +80,7 @@ class KeyPointClassifier(object):
                     self.ov_compiled = core.compile_model(ov_model, self.openvino_device)
                 self.ov_input = self.ov_compiled.inputs[0]
                 self.ov_outputs = list(self.ov_compiled.outputs)
+                self.backend = f"openvino:{self.openvino_device}"
             except Exception:
                 self.use_openvino = False
 
@@ -70,6 +92,7 @@ class KeyPointClassifier(object):
             self.interpreter.allocate_tensors()
             self.input_details = self.interpreter.get_input_details()
             self.output_details = self.interpreter.get_output_details()
+            self.backend = "tflite"
 
     def __call__(
         self,
