@@ -18,7 +18,7 @@ export default function ChatBox() {
   const [signWords, setSignWords] = useState([])
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || '100%')
   const [colorMode, setColorMode] = useState(() => localStorage.getItem('colorMode') || 'light')
-  
+
   // Left side sign language conversion history (corresponding to the left side of Figure 3)
   const [history, setHistory] = useState([
     { id: '1', text: '我上課', time: '10:30' },
@@ -129,7 +129,7 @@ export default function ChatBox() {
     const expected = selectedWords.join(' ').trim()
     if (!expected || input.trim() !== expected) return
     const userText = input.trim()
-    const newEntry = { id: uuidv4(), text: userText, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }
+    const newEntry = { id: uuidv4(), text: userText, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
     setHistory([newEntry, ...history])
     setMessages(prev => ([...prev, { id: uuidv4(), role: 'user', text: userText }]))
     setInput('')
@@ -138,60 +138,101 @@ export default function ChatBox() {
 
   const generateGeminiReply = async (promptText) => {
     if (isCamOpen) return
-    const apiKey = process.env.REACT_APP_POE_API_KEY
-    const model = process.env.REACT_APP_POE_MODEL || 'grok-4.1-fast-reasoning'
+    const apiKey = process.env.REACT_APP_NVIDIA_API_KEY
+    const model = process.env.REACT_APP_NVIDIA_MODEL || 'minimaxai/minimax-m2.1'
     if (!apiKey) {
-      setGenError('Missing Poe API Key, Please set REACT_APP_POE_API_KEY')
+      setGenError('Missing NVIDIA API Key, please set REACT_APP_NVIDIA_API_KEY in .env')
       return
     }
 
     setGenError('')
     setIsGenerating(true)
-    try {
-      console.log('Sending request to Poe API with prompt:', promptText)
-      const resp = await fetch('https://api.poe.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'user', content: promptText }
-          ],
-          temperature: 0.7,
-          max_tokens: 200
+    const requestNvidiaCompletion = async (timeoutMs, maxTokens) => {
+      const controller = new AbortController()
+      const requestTimeoutId = setTimeout(() => controller.abort(), timeoutMs)
+      try {
+        return await fetch('/v1/chat/completions', {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: 'system', content: '請只輸出最終答案，不要輸出任何思考過程、推理過程、<think>標籤或中間草稿。請嚴格按照「正常原句」與「手語表達」兩行格式輸出。' },
+              { role: 'user', content: promptText }
+            ],
+            temperature: 0.3,
+            top_p: 0.9,
+            max_tokens: maxTokens,
+            stream: false
+          })
         })
-      })
+      } finally {
+        clearTimeout(requestTimeoutId)
+      }
+    }
+    try {
+      console.log('Sending request to NVIDIA API with prompt:', promptText)
+      let resp
+      try {
+        resp = await requestNvidiaCompletion(45000, 256)
+      } catch (err) {
+        if (err?.name !== 'AbortError') throw err
+        console.warn('First attempt timed out, retrying with lower token budget...')
+        resp = await requestNvidiaCompletion(60000, 128)
+      }
       console.log('Response status:', resp.status)
       if (!resp.ok) {
-        const errText = await resp.text()
-        console.error('API Error:', errText)
+        let errText = ''
+        try { errText = await resp.text() } catch (_) { }
+        console.error('API Error:', resp.status, errText)
         if (resp.status === 401 || resp.status === 403) {
-          throw new Error('Unauthorized. Please check your Poe API key and model access.')
+          throw new Error('Unauthorized. Please check your NVIDIA API key.')
         }
         if (resp.status === 429) {
           throw new Error('Rate limited. Please wait and try again.')
         }
-        throw new Error(errText || 'Poe API Error')
+        // Try to parse JSON error detail
+        let detail = ''
+        try {
+          const errJson = JSON.parse(errText)
+          detail = errJson?.detail || errJson?.error?.message || errJson?.message || ''
+        } catch (_) {
+          detail = errText?.substring(0, 200) || ''
+        }
+        throw new Error(`NVIDIA API Error (${resp.status}): ${detail || 'Unknown error'}`)
       }
 
       const data = await resp.json()
       console.log('API Response data:', data)
-      const reply = data?.choices?.[0]?.message?.content?.trim() || '(No reply)'
-      console.log('Extracted reply:', reply)
-      const lines = reply.split('\n')
-      const signLine = lines.find(line => line.trim().startsWith('手語表達：'))
+      const msg = data?.choices?.[0]?.message
+      const rawReply = (msg?.content || '').trim()
+      // Extract 正常原句 and 手語表達 directly from rawReply,
+      // regardless of any leading reasoning/think text before them.
+      const normalMatch = rawReply.match(/正常原句[:：]\s*([^\n]+)/)
+      const signMatch = rawReply.match(/手語表達[:：]\s*([^\n]+)/)
+      const normalLine = normalMatch ? `正常原句：${normalMatch[1].trim()}` : ''
+      const signLine = signMatch ? `手語表達：${signMatch[1].trim()}` : ''
+      const assistantText = (normalLine || signLine)
+        ? [normalLine, signLine].filter(Boolean).join('\n')
+        : rawReply.slice(0, 200) || '(No reply)'
+      console.log('Extracted reply:', assistantText)
       if (signLine) {
-        const signText = signLine.replace('手語表達：', '').trim()
-        const parsedSignWords = signText.split(' ').filter(w => w.trim())
+        const signText = signLine.replace(/^手語表達[:：]/, '').trim()
+        const parsedSignWords = signText.split(/\s+/).filter(w => w.trim())
         setSignWords(parsedSignWords)
       }
-      setMessages(prev => ([...prev, { id: uuidv4(), role: 'assistant', text: reply }]))
+      setMessages(prev => ([...prev, { id: uuidv4(), role: 'assistant', text: assistantText }]))
     } catch (err) {
       console.error('Generation error:', err)
-      setGenError('Generation failed, please try again later')
+      if (err?.name === 'AbortError') {
+        setGenError('Generation timeout after retry: the model is currently slow, please try again.')
+        return
+      }
+      setGenError(`Generation failed: ${err.message || 'please try again later'}`)
     } finally {
       setIsGenerating(false)
     }
@@ -298,7 +339,7 @@ export default function ChatBox() {
 
         {/* Figure 3 core optimization: visual feedback area */}
         <section className="sign-visual-section">
-          
+
           {/* 【Key modification】: output Bar with height x3, used to place multiple GIF boxes */}
           <div className="sign-status-bar x3-height">
             <div className="gif-sequence-wrapper">
@@ -344,8 +385,8 @@ export default function ChatBox() {
         {/* 底部輸入控制 */}
         <footer className="control-footer">
           <form className="main-input-group" onSubmit={handleSend}>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={isCamOpen ? "相機模式辨識中..." : "請在此輸入文字..."}
@@ -355,8 +396,8 @@ export default function ChatBox() {
               <FaChevronRight />
             </button>
           </form>
-          
-          <button 
+
+          <button
             className={`mode-toggle-btn ${isCamOpen ? 'cam-active' : ''}`}
             onClick={() => setIsCamOpen(!isCamOpen)}
           >

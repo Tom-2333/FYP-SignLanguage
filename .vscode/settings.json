@@ -1,5 +1,5 @@
 {
-  "python.defaultInterpreterPath": "${workspaceFolder}/cv_hands/.venv-train310/Scripts/python.exe",
+  "python.defaultInterpreterPath": "python",
   "python-envs.defaultEnvManager": "ms-python.python:system",
   "python-envs.pythonProjects": []
 }

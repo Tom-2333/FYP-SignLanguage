@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useLanguage } from '../contexts/LanguageContext'
 import './auth.css'
 
 export default function Auth({ mode = 'login' }) {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const [view, setView] = useState(mode) // 'login' or 'register'
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -15,15 +17,15 @@ export default function Auth({ mode = 'login' }) {
     e.preventDefault()
     setError('')
     if (!email || !password || (view === 'register' && !name)) {
-      setError('Please complete all fields')
+      setError(t('auth.completeFields'))
       return
     }
     if (!email.includes('@')) {
-      setError('Please enter a valid email')
+      setError(t('auth.validEmail'))
       return
     }
     if (password.length < 6) {
-      setError('Password must be at least 6 characters')
+      setError(t('auth.passwordLength'))
       return
     }
 
@@ -62,10 +64,10 @@ export default function Auth({ mode = 'login' }) {
           navigate('/vocabulary')
         }
       } else {
-        setError(data.error || 'Authentication failed')
+        setError(data.error || t('auth.authFailed'))
       }
     } catch (err) {
-      setError('Network error. Please try again.')
+      setError(t('auth.networkError'))
     } finally {
       setLoading(false)
     }
@@ -74,49 +76,49 @@ export default function Auth({ mode = 'login' }) {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h2>{view === 'login' ? 'Login' : 'Register'}</h2>
+        <h2>{view === 'login' ? t('auth.login') : t('auth.register')}</h2>
 
         <form onSubmit={submit} className="auth-form">
           {view === 'register' && (
             <label className="field">
-              <div className="label">Full name</div>
-              <input value={name} onChange={e => setName(e.target.value)} placeholder="Your name" />
+              <div className="label">{t('auth.fullName')}</div>
+              <input value={name} onChange={e => setName(e.target.value)} placeholder={t('auth.namePlaceholder')} />
             </label>
           )}
 
           <label className="field">
-            <div className="label">Email</div>
-            <input value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
+            <div className="label">{t('auth.email')}</div>
+            <input value={email} onChange={e => setEmail(e.target.value)} placeholder={t('auth.emailPlaceholder')} />
           </label>
 
           <label className="field">
-            <div className="label">Password</div>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="min 6 chars" />
+            <div className="label">{t('auth.password')}</div>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={t('auth.passwordPlaceholder')} />
           </label>
 
           {error && <div className="error">{error}</div>}
 
           <div className="actions">
-            <button className="primary" type="submit" disabled={loading}>{loading ? 'Please wait...' : (view === 'login' ? 'Login' : 'Create account')}</button>
+            <button className="primary" type="submit" disabled={loading}>{loading ? t('auth.pleaseWait') : (view === 'login' ? t('auth.login') : t('auth.createAccount'))}</button>
           </div>
         </form>
 
         <div className="switch">
           {view === 'login' ? (
             <>
-              <span>Don't have an account?</span>
-              <button className="link" onClick={() => setView('register')}>Register</button>
+              <span>{t('auth.noAccount')}</span>
+              <button className="link" onClick={() => setView('register')}>{t('auth.register')}</button>
             </>
           ) : (
             <>
-              <span>Already have an account?</span>
-              <button className="link" onClick={() => setView('login')}>Login</button>
+              <span>{t('auth.hasAccount')}</span>
+              <button className="link" onClick={() => setView('login')}>{t('auth.login')}</button>
             </>
           )}
         </div>
 
         <div className="alt-links">
-          <Link to="/">Back to app</Link>
+          <Link to="/">{t('auth.backToApp')}</Link>
         </div>
       </div>
     </div>

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { FaUser, FaEnvelope, FaPalette, FaSignOutAlt, FaMoon, FaSun } from 'react-icons/fa'
+import { FaUser, FaEnvelope, FaPalette, FaSignOutAlt, FaMoon, FaSun, FaGlobe } from 'react-icons/fa'
+import { useLanguage } from '../contexts/LanguageContext'
 import './settings.css'
 
 export default function Settings() {
+  const { language, setLanguage, t } = useLanguage()
   const [userInfo, setUserInfo] = useState({
     nickname: '',
     email: ''
@@ -69,6 +71,11 @@ export default function Settings() {
     setHasChanges(true)
   }
 
+  const handleLanguageChange = (lang) => {
+    setLanguage(lang)
+    setHasChanges(true)
+  }
+
   const handleSaveSettings = () => {
     // Save color mode
     localStorage.setItem('colorMode', colorMode)
@@ -88,7 +95,7 @@ export default function Settings() {
     // Clear user data from localStorage
     localStorage.removeItem('user')
     localStorage.removeItem('token')
-    
+
     // Redirect to login page or auth page
     window.location.href = '/auth'
   }
@@ -97,22 +104,22 @@ export default function Settings() {
     <div className="settings-container">
       <div className="settings-wrapper">
         <header className="settings-header">
-          <h1>Settings</h1>
-          <p>Manage your account preferences</p>
+          <h1>{t('settings.title')}</h1>
+          <p>{t('settings.subtitle')}</p>
         </header>
 
         <div className="settings-content">
           {/* User Information Section */}
           <section className="settings-section">
-            <h2 className="section-title">Account Information</h2>
-            
+            <h2 className="section-title">{t('settings.accountInfo')}</h2>
+
             <div className="info-card">
               <div className="info-row">
                 <div className="info-icon">
                   <FaUser />
                 </div>
                 <div className="info-details">
-                  <label>Nickname</label>
+                  <label>{t('settings.nickname')}</label>
                   <p>{userInfo.nickname}</p>
                 </div>
               </div>
@@ -124,7 +131,7 @@ export default function Settings() {
                   <FaEnvelope />
                 </div>
                 <div className="info-details">
-                  <label>Email</label>
+                  <label>{t('settings.emailLabel')}</label>
                   <p>{userInfo.email}</p>
                 </div>
               </div>
@@ -133,27 +140,27 @@ export default function Settings() {
 
           {/* Appearance Section */}
           <section className="settings-section">
-            <h2 className="section-title">Appearance</h2>
-            
+            <h2 className="section-title">{t('settings.appearance')}</h2>
+
             <div className="info-card">
               <div className="info-row">
                 <div className="info-icon">
                   <FaPalette />
                 </div>
                 <div className="info-details">
-                  <label>Color Mode</label>
+                  <label>{t('settings.colorMode')}</label>
                   <div className="color-mode-toggle">
                     <button
                       className={`mode-btn ${colorMode === 'light' ? 'active' : ''}`}
                       onClick={() => handleColorModeChange('light')}
                     >
-                      <FaSun /> Light
+                      <FaSun /> {t('settings.light')}
                     </button>
                     <button
                       className={`mode-btn ${colorMode === 'dark' ? 'active' : ''}`}
                       onClick={() => handleColorModeChange('dark')}
                     >
-                      <FaMoon /> Dark
+                      <FaMoon /> {t('settings.dark')}
                     </button>
                   </div>
                 </div>
@@ -163,12 +170,12 @@ export default function Settings() {
 
           {/* Font Size Section */}
           <section className="settings-section">
-            <h2 className="section-title">Font Size</h2>
-            
+            <h2 className="section-title">{t('settings.fontSize')}</h2>
+
             <div className="info-card">
               <div className="info-row">
                 <div className="info-details">
-                  <label>Text Size</label>
+                  <label>{t('settings.textSize')}</label>
                   <div className="font-size-controls">
                     <button
                       type="button"
@@ -202,8 +209,8 @@ export default function Settings() {
 
           {/* Accessibility Section */}
           <section className="settings-section">
-            <h2 className="section-title">Accessibility</h2>
-            
+            <h2 className="section-title">{t('settings.accessibility')}</h2>
+
             <div className="info-card">
               <div className="accessibility-options">
                 <label className="checkbox-label">
@@ -214,10 +221,40 @@ export default function Settings() {
                     className="accessibility-checkbox"
                   />
                   <span className="checkbox-text">
-                    <strong>Color Blind Friendly Mode (RG-CVD)</strong>
-                    <small>Optimized colors for red-green color vision deficiency</small>
+                    <strong>{t('settings.rgCvdTitle')}</strong>
+                    <small>{t('settings.rgCvdDesc')}</small>
                   </span>
                 </label>
+              </div>
+            </div>
+          </section>
+
+          {/* Language Section */}
+          <section className="settings-section">
+            <h2 className="section-title">{t('settings.language')}</h2>
+
+            <div className="info-card">
+              <div className="info-row">
+                <div className="info-icon">
+                  <FaGlobe />
+                </div>
+                <div className="info-details">
+                  <label>{t('settings.langLabel')}</label>
+                  <div className="color-mode-toggle">
+                    <button
+                      className={`mode-btn ${language === 'zh' ? 'active' : ''}`}
+                      onClick={() => handleLanguageChange('zh')}
+                    >
+                      {t('settings.chinese')}
+                    </button>
+                    <button
+                      className={`mode-btn ${language === 'en' ? 'active' : ''}`}
+                      onClick={() => handleLanguageChange('en')}
+                    >
+                      {t('settings.english')}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -226,7 +263,7 @@ export default function Settings() {
           {hasChanges && (
             <div className="save-section">
               <button className="save-btn" onClick={handleSaveSettings}>
-                Save Settings
+                {t('common.save')}
               </button>
             </div>
           )}
@@ -235,7 +272,7 @@ export default function Settings() {
         {/* Logout Button */}
         <div className="settings-footer">
           <button className="logout-btn" onClick={handleLogout}>
-            <FaSignOutAlt /> Logout
+            <FaSignOutAlt /> {t('settings.logout')}
           </button>
         </div>
       </div>

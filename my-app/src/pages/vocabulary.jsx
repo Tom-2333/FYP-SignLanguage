@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import './vocabulary.css'
 import { Hands } from '@mediapipe/hands'
 import { Camera } from '@mediapipe/camera_utils'
+import { useLanguage } from '../contexts/LanguageContext'
 
 // Get confidence score for a word (currently hard-coded, will connect to API later)
 const getConfidence = (wordId) => {
@@ -11,6 +12,7 @@ const getConfidence = (wordId) => {
 }
 
 export default function Vocabulary() {
+  const { language, t } = useLanguage()
   const videoRef = useRef(null)
 
   const canvasRef = useRef(null)
@@ -309,7 +311,7 @@ export default function Vocabulary() {
 
   // Ensure data is loaded before rendering
   if (!dictionaryData || Object.keys(dictionaryData).length === 0) {
-    return <div>Loading... (Data Not Found/Server Error)</div>
+    return <div>{t('vocab.loadingData')}</div>
   }
 
   const categoryKeys = Object.keys(dictionaryData)
@@ -324,12 +326,13 @@ export default function Vocabulary() {
   const completionRate = totalAllWords > 0 ? Math.round((completedCount / totalAllWords) * 100) : 0
 
   const currentCategoryData = selectedCategory === 'All'
-    ? { name: 'All Words', words: allWords }
+    ? { name: 'All Words', name_en: 'All Words', words: allWords }
     : dictionaryData[selectedCategory]
 
-  // Filter words based on search query
+  // Filter words based on search query (search both Chinese and English)
   const filteredWords = currentCategoryData.words.filter(word =>
-    word.word.toLowerCase().includes(searchQuery.toLowerCase())
+    word.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (word.engword && word.engword.toLowerCase().includes(searchQuery.toLowerCase()))
   )
 
   const totalWords = filteredWords.length
@@ -421,31 +424,31 @@ export default function Vocabulary() {
     >
       <header className="vocab-header">
         <div className="vocab-progress">
-          <span className={`progress-label word-size-${wordSize}`}>Recognition Rate</span>
+          <span className={`progress-label word-size-${wordSize}`}>{t('vocab.recognitionRate')}</span>
           <div className="vocab-progress-bar" aria-hidden>
             <div className="vocab-progress-fill" style={{ width: `${completionRate}%` }} />
           </div>
           <span className={`progress-value word-size-${wordSize}`}>{completionRate}%</span>
         </div>
-        <div className={`vocab-greeting word-size-${wordSize}`}>Hello, {userName}! </div>
+        <div className={`vocab-greeting word-size-${wordSize}`}>{t('vocab.hello')}{userName}! </div>
       </header>
 
       {/* Progress and Selected Word Info */}
       <div className="vocab-info-bar">
         <div className="info-item">
-          <span className={`info-label word-size-${wordSize}`}>Progress:</span>
+          <span className={`info-label word-size-${wordSize}`}>{t('vocab.progress')}</span>
           <span className={`info-value word-size-${wordSize}`}>{selectedWord ? `${currentCategoryData.words.findIndex(w => w.id === selectedWord.id) + 1}/${currentCategoryData.words.length}` : `0/${currentCategoryData.words.length}`}</span>
         </div>
         {selectedWord && (
           <div className="info-item">
-            <span className={`info-label word-size-${wordSize}`}>Selected Word:</span>
-            <span className={`info-value selected-word-name word-size-${wordSize}`}>{selectedWord.word}</span>
+            <span className={`info-label word-size-${wordSize}`}>{t('vocab.selectedWord')}</span>
+            <span className={`info-value selected-word-name word-size-${wordSize}`}>{language === 'en' ? (selectedWord.engword || selectedWord.word) : selectedWord.word}</span>
           </div>
         )}
         <div className="search-container">
           <input
             type="text"
-            placeholder="Search words..."
+            placeholder={t('vocab.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value)
@@ -478,77 +481,77 @@ export default function Vocabulary() {
                   className="suggestion-item"
                   onClick={() => handleSuggestionClick(word)}
                 >
-                  <span className="suggestion-word">{word.word}</span>
+                  <span className="suggestion-word">{language === 'en' ? (word.engword || word.word) : word.word}</span>
                   <span className="suggestion-id">ID: {word.id}</span>
                 </div>
               ))}
               {filteredWords.length > 10 && (
                 <div className="suggestion-more">
-                  +{filteredWords.length - 10} more results
+                  +{filteredWords.length - 10} {t('vocab.moreResults')}
                 </div>
               )}
             </div>
           )}
         </div>
         <div className="font-size-controls">
-            <button
-              type="button"
-            className={`font-size-btn size-small ${fontSize === '90%' ? 'active' : ''}`}
-              onClick={() => {
-                setFontSize('90%')
-                localStorage.setItem('fontSize', '90%')
-              }}
-              title="Small (90%)"
-            >
-              aa
-            </button>
-            <button
-              type="button"
-            className={`font-size-btn size-normal ${fontSize === '100%' ? 'active' : ''}`}
-              onClick={() => {
-                setFontSize('100%')
-                localStorage.setItem('fontSize', '100%')
-              }}
-              title="Normal (100%)"
-            >
-              Aa
-            </button>
-            <button
-              type="button"
-            className={`font-size-btn size-large ${fontSize === '125%' ? 'active' : ''}`}
-              onClick={() => {
-                setFontSize('125%')
-                localStorage.setItem('fontSize', '125%')
-              }}
-              title="Large (125%)"
-            >
-              AA
-            </button>
-          </div>
           <button
             type="button"
-            className="theme-toggle"
+            className={`font-size-btn size-small ${fontSize === '90%' ? 'active' : ''}`}
             onClick={() => {
-              const nextMode = colorMode === 'light' ? 'dark' : 'light'
-              setColorMode(nextMode)
-              localStorage.setItem('colorMode', nextMode)
-              if (nextMode === 'dark') {
-                document.body.classList.add('dark-mode')
-              } else {
-                document.body.classList.remove('dark-mode')
-              }
+              setFontSize('90%')
+              localStorage.setItem('fontSize', '90%')
             }}
-            aria-label={colorMode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-            title={colorMode === 'light' ? 'Dark mode' : 'Light mode'}
+            title="Small (90%)"
           >
-            {colorMode === 'light' ? '🌙' : '☀️'}
+            aa
+          </button>
+          <button
+            type="button"
+            className={`font-size-btn size-normal ${fontSize === '100%' ? 'active' : ''}`}
+            onClick={() => {
+              setFontSize('100%')
+              localStorage.setItem('fontSize', '100%')
+            }}
+            title="Normal (100%)"
+          >
+            Aa
+          </button>
+          <button
+            type="button"
+            className={`font-size-btn size-large ${fontSize === '125%' ? 'active' : ''}`}
+            onClick={() => {
+              setFontSize('125%')
+              localStorage.setItem('fontSize', '125%')
+            }}
+            title="Large (125%)"
+          >
+            AA
           </button>
         </div>
+        <button
+          type="button"
+          className="theme-toggle"
+          onClick={() => {
+            const nextMode = colorMode === 'light' ? 'dark' : 'light'
+            setColorMode(nextMode)
+            localStorage.setItem('colorMode', nextMode)
+            if (nextMode === 'dark') {
+              document.body.classList.add('dark-mode')
+            } else {
+              document.body.classList.remove('dark-mode')
+            }
+          }}
+          aria-label={colorMode === 'light' ? t('vocab.switchDarkMode') : t('vocab.switchLightMode')}
+          title={colorMode === 'light' ? t('vocab.darkMode') : t('vocab.lightMode')}
+        >
+          {colorMode === 'light' ? '🌙' : '☀️'}
+        </button>
+      </div>
 
-        <section className="vocab-main">
+      <section className="vocab-main">
         {/* Category Buttons */}
         <aside className="vocab-sidebar combined">
-          <h3>Categories</h3>
+          <h3>{t('vocab.categories')}</h3>
           <div className="category-buttons">
             {categoryKeys.map(key => (
               <button
@@ -556,7 +559,7 @@ export default function Vocabulary() {
                 className={`category-btn ${key === selectedCategory ? 'active' : ''} ${key === 'All' ? 'all-btn' : ''}`}
                 onClick={() => handleCategoryClick(key)}
               >
-                {dictionaryData[key].name}
+                {language === 'en' ? (dictionaryData[key].name_en || dictionaryData[key].name) : dictionaryData[key].name}
               </button>
             ))}
           </div>
@@ -568,7 +571,7 @@ export default function Vocabulary() {
             /* Word List View */
             <div className="vocab-card word-list-box">
               <div className="box-title">
-                {currentCategoryData.name}
+                {language === 'en' ? (currentCategoryData.name_en || currentCategoryData.name) : currentCategoryData.name}
               </div>
               <div className="word-grid">
                 {currentWords.map((item) => (
@@ -577,7 +580,7 @@ export default function Vocabulary() {
                     className={`word-btn ${selectedWord?.id === item.id ? 'selected' : ''} ${completedWordIds.has(String(item.id)) ? 'completed' : ''}`}
                     onClick={() => handleWordClick(item)}
                   >
-                    {item.word}
+                    {language === 'en' ? (item.engword || item.word) : item.word}
                   </button>
                 ))}
               </div>
@@ -594,7 +597,7 @@ export default function Vocabulary() {
             <>
               {/* Video/Image Display */}
               <div className="vocab-card demo-box">
-                <div className="box-title">Sign Demonstration</div>
+                <div className="box-title">{t('vocab.signDemo')}</div>
                 <div className="gif-area">
                   {selectedWord ? (
                     <img
@@ -608,16 +611,16 @@ export default function Vocabulary() {
                       }}
                     />
                   ) : (
-                    <div className="placeholder-text">Select a word to view sign</div>
+                    <div className="placeholder-text">{t('vocab.selectWord')}</div>
                   )}
                   <div className="placeholder-text hidden">
-                    Video not available
+                    {t('vocab.videoNotAvailable')}
                   </div>
                 </div>
                 {selectedWord && (
                   <div className="card-meta">
-                    <h2 className={`demo-word-title word-size-${wordSize}`}>{selectedWord.word}</h2>
-                    {isCompleted && <div className="completion-status">Completed</div>}
+                    <h2 className={`demo-word-title word-size-${wordSize}`}>{language === 'en' ? (selectedWord.engword || selectedWord.word) : selectedWord.word}</h2>
+                    {isCompleted && <div className="completion-status">{t('vocab.completed')}</div>}
                     <div className="translation">ID: {selectedWord.id}</div>
                     {/* Navigation Buttons */}
                     <div className="demo-nav-buttons">
@@ -633,7 +636,7 @@ export default function Vocabulary() {
                           }
                         }}
                       >
-                        Previous
+                        {t('vocab.previous')}
                       </button>
                       <button
                         className="nav-btn next"
@@ -647,7 +650,7 @@ export default function Vocabulary() {
                           }
                         }}
                       >
-                        Next
+                        {t('vocab.next')}
                       </button>
                     </div>
                   </div>
@@ -659,7 +662,7 @@ export default function Vocabulary() {
           {/* Camera Box - Always rendered, but hidden when not in demo view */}
           <div className={`vocab-card cam-box ${showDemo ? '' : 'is-hidden'}`}>
             <div className="box-title">
-              Your Sign (Camera)
+              {t('vocab.yourSign')}
               {detectedGesture && <span className="detected-gesture">• {detectedGesture}</span>}
             </div>
             <div className="cam-wrap">
@@ -693,33 +696,33 @@ export default function Vocabulary() {
             {/* Gesture Detection Results */}
             <div className="gesture-results">
               <div className="gesture-header">
-                <span>Gesture Recognition:</span>
+                <span>{t('vocab.gestureRecognition')}</span>
                 <span className={`gesture-status ${gestureServiceOnline ? 'online' : 'offline'}`}>
-                  {gestureServiceOnline ? '● Connected' : '● Offline - Run app.py'}
+                  {gestureServiceOnline ? t('vocab.connected') : t('vocab.offline')}
                 </span>
               </div>
               {gestureServiceOnline ? (
                 <>
                   {gestureData.sequence_gesture_text && (
                     <div className={`gesture-line gesture-text word-size-${wordSize}`}>
-                      <strong>Sequence:</strong> {gestureData.sequence_gesture_text}
+                      <strong>{t('vocab.sequence')}</strong> {gestureData.sequence_gesture_text}
                     </div>
                   )}
                   {gestureData.hand_sign_text && (
                     <div className={`gesture-line gesture-text word-size-${wordSize}`}>
-                      <strong>Hand Sign:</strong> {gestureData.hand_sign_text}
+                      <strong>{t('vocab.handSign')}</strong> {gestureData.hand_sign_text}
                     </div>
                   )}
                   {/* Display All detected hands */}
                   {gestureData.hands && gestureData.hands.length > 0 && (
                     <div className="detected-hands">
-                      <strong>Detected {gestureData.hands.length} hands:</strong>
+                      <strong>{t('vocab.detectedHands')} {gestureData.hands.length}:</strong>
                       {gestureData.hands.map((hand, index) => (
                         <div key={index} className="detected-hand-row">
                           <span className={`hand-badge ${hand.hand === 'Left' ? 'left' : 'right'}`}>
-                            {hand.hand === 'Left' ? '👈 Left Hand' : '👉 Right Hand'}
+                            {hand.hand === 'Left' ? t('vocab.leftHand') : t('vocab.rightHand')}
                           </span>
-                          <span>{hand.gesture || '(No Gesture)'}</span>
+                          <span>{hand.gesture || t('vocab.noGesture')}</span>
                         </div>
                       ))}
                     </div>
@@ -734,13 +737,13 @@ export default function Vocabulary() {
                 <div className="gesture-offline">
                   Connecting to gesture detection server...<br />
                   <div className="gesture-offline-box">
-                    <strong>To start gesture detection (FastAPI):</strong><br />
-                    1. Open terminal<br />
-                    2. Run: <code className="inline-code">cd /Users/ronald8931/Desktop/FYP-SL_conn_POE/cv_hands</code><br />
+                    <strong>{t('vocab.gestureOfflineTitle')}</strong><br />
+                    {t('vocab.gestureOfflineStep1')}<br />
+                    {t('vocab.gestureOfflineStep2')} <code className="inline-code">cd /Users/ronald8931/Desktop/FYP-SL_conn_POE/cv_hands</code><br />
                     3. Run: <code className="inline-code">python3 app_simple.py</code><br />
                     <div className="gesture-offline-note">
-                      FastAPI server will start on <strong>http://localhost:5001</strong><br />
-                      API Docs available at <strong>http://localhost:5001/docs</strong>
+                      {t('vocab.gestureOfflineNote1')} <strong>http://localhost:5001</strong><br />
+                      {t('vocab.gestureOfflineNote2')} <strong>http://localhost:5001/docs</strong>
                     </div>
                   </div>
                 </div>
@@ -751,12 +754,12 @@ export default function Vocabulary() {
           {/* Match Display - Shows below camera when gesture matches selected word */}
           {showDemo && selectedWord && gestureServiceOnline && gestureData.sequence_gesture_text && (
             <div className={`match-display ${isMatch ? 'is-match' : ''}`}>
-              <div>Selected Word: {selectedWord.word}</div>
-              <div>Sequence Gesture: {gestureData.sequence_gesture_text}</div>
+              <div>{t('vocab.selectedWordLabel')} {language === 'en' ? (selectedWord.engword || selectedWord.word) : selectedWord.word}</div>
+              <div>{t('vocab.sequenceGesture')} {gestureData.sequence_gesture_text}</div>
               {isMatch && (
                 <div className="match-badge">
                   <span>✓</span>
-                  <span>Match</span>
+                  <span>{t('vocab.match')}</span>
                 </div>
               )}
             </div>
