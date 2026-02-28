@@ -4,7 +4,7 @@ import { FaPhone, FaMapMarkerAlt, FaEnvelope, FaExternalLinkAlt, FaInfoCircle, F
 import { useLanguage } from '../contexts/LanguageContext'
 
 export default function Support() {
-  const { t } = useLanguage()
+  const { language, setLanguage, t } = useLanguage()
 
   useEffect(() => {
     // Apply color mode from localStorage
@@ -25,13 +25,34 @@ export default function Support() {
   }, [])
 
   return (
-    <div className="support-page">
-      <div className="support-header">
-        <h1>{t('support.title')}</h1>
-        <p className="header-subtitle">{t('support.subtitle')}</p>
-      </div>
+    <div className="support-page-root">
+      <div className="support-page">
+        <div className="support-header">
+          <div className="support-header-top">
+            <h1>{t('support.title')}</h1>
+            <div className="support-language-toggle" role="group" aria-label="Language selector">
+              <span className="support-language-icon" aria-hidden>🌐</span>
+              <button
+                type="button"
+                className={`support-language-btn ${language === 'zh' ? 'active' : ''}`}
+                onClick={() => setLanguage('zh')}
+              >
+                粵
+              </button>
+              <span className="support-language-divider">|</span>
+              <button
+                type="button"
+                className={`support-language-btn ${language === 'en' ? 'active' : ''}`}
+                onClick={() => setLanguage('en')}
+              >
+                Eng
+              </button>
+            </div>
+          </div>
+          <p className="header-subtitle">{t('support.subtitle')}</p>
+        </div>
 
-      <div className="support-content">
+        <div className="support-content">
         {/* Main NGOs Section */}
         <section className="support-section">
           <div className="section-title">
@@ -260,6 +281,7 @@ export default function Support() {
             </p>
           </div>
         </section>
+        </div>
       </div>
     </div>
   )

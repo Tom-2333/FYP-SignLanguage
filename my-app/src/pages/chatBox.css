@@ -100,6 +100,41 @@
   gap: 8px;
 }
 
+.chat-language-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border, #E2E8F0);
+  border-radius: 8px;
+  background: var(--surface, #FFFFFF);
+}
+
+.chat-language-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.chat-language-btn {
+  border: none;
+  background: transparent;
+  color: var(--text, #0F172A);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.chat-language-btn.active {
+  background: var(--primary, #2563EB);
+  color: var(--on-primary, #FFFFFF);
+}
+
+.chat-language-divider {
+  color: var(--text-muted, #475569);
+  font-size: 12px;
+}
+
 .font-size-controls {
   display: flex;
   gap: 4px;

@@ -493,59 +493,79 @@ export default function Vocabulary() {
             </div>
           )}
         </div>
-        <div className="font-size-controls">
+        <div className="vocab-header-controls">
+          <div className="vocab-language-toggle" role="group" aria-label="Language selector">
+            <span className="vocab-language-icon" aria-hidden>🌐</span>
+            <button
+              type="button"
+              className={`vocab-language-btn ${language === 'zh' ? 'active' : ''}`}
+              onClick={() => setLanguage('zh')}
+            >
+              粵
+            </button>
+            <span className="vocab-language-divider">|</span>
+            <button
+              type="button"
+              className={`vocab-language-btn ${language === 'en' ? 'active' : ''}`}
+              onClick={() => setLanguage('en')}
+            >
+              Eng
+            </button>
+          </div>
+          <div className="font-size-controls">
+            <button
+              type="button"
+              className={`font-size-btn size-small ${fontSize === '90%' ? 'active' : ''}`}
+              onClick={() => {
+                setFontSize('90%')
+                localStorage.setItem('fontSize', '90%')
+              }}
+              title="Small (90%)"
+            >
+              aa
+            </button>
+            <button
+              type="button"
+              className={`font-size-btn size-normal ${fontSize === '100%' ? 'active' : ''}`}
+              onClick={() => {
+                setFontSize('100%')
+                localStorage.setItem('fontSize', '100%')
+              }}
+              title="Normal (100%)"
+            >
+              Aa
+            </button>
+            <button
+              type="button"
+              className={`font-size-btn size-large ${fontSize === '125%' ? 'active' : ''}`}
+              onClick={() => {
+                setFontSize('125%')
+                localStorage.setItem('fontSize', '125%')
+              }}
+              title="Large (125%)"
+            >
+              AA
+            </button>
+          </div>
           <button
             type="button"
-            className={`font-size-btn size-small ${fontSize === '90%' ? 'active' : ''}`}
+            className="theme-toggle"
             onClick={() => {
-              setFontSize('90%')
-              localStorage.setItem('fontSize', '90%')
+              const nextMode = colorMode === 'light' ? 'dark' : 'light'
+              setColorMode(nextMode)
+              localStorage.setItem('colorMode', nextMode)
+              if (nextMode === 'dark') {
+                document.body.classList.add('dark-mode')
+              } else {
+                document.body.classList.remove('dark-mode')
+              }
             }}
-            title="Small (90%)"
+            aria-label={colorMode === 'light' ? t('vocab.switchDarkMode') : t('vocab.switchLightMode')}
+            title={colorMode === 'light' ? t('vocab.darkMode') : t('vocab.lightMode')}
           >
-            aa
-          </button>
-          <button
-            type="button"
-            className={`font-size-btn size-normal ${fontSize === '100%' ? 'active' : ''}`}
-            onClick={() => {
-              setFontSize('100%')
-              localStorage.setItem('fontSize', '100%')
-            }}
-            title="Normal (100%)"
-          >
-            Aa
-          </button>
-          <button
-            type="button"
-            className={`font-size-btn size-large ${fontSize === '125%' ? 'active' : ''}`}
-            onClick={() => {
-              setFontSize('125%')
-              localStorage.setItem('fontSize', '125%')
-            }}
-            title="Large (125%)"
-          >
-            AA
+            {colorMode === 'light' ? '🌙' : '☀️'}
           </button>
         </div>
-        <button
-          type="button"
-          className="theme-toggle"
-          onClick={() => {
-            const nextMode = colorMode === 'light' ? 'dark' : 'light'
-            setColorMode(nextMode)
-            localStorage.setItem('colorMode', nextMode)
-            if (nextMode === 'dark') {
-              document.body.classList.add('dark-mode')
-            } else {
-              document.body.classList.remove('dark-mode')
-            }
-          }}
-          aria-label={colorMode === 'light' ? t('vocab.switchDarkMode') : t('vocab.switchLightMode')}
-          title={colorMode === 'light' ? t('vocab.darkMode') : t('vocab.lightMode')}
-        >
-          {colorMode === 'light' ? '🌙' : '☀️'}
-        </button>
       </div>
 
       <section className="vocab-main">
@@ -601,8 +621,8 @@ export default function Vocabulary() {
                 <div className="gif-area">
                   {selectedWord ? (
                     <img
-                      src={`http://localhost/SL-Database_api/video-webp/${selectedWord.id.padStart(8, '0')}-${selectedWord.word}.webp`}
-                      alt={selectedWord.word}
+                      src={`http://localhost/SL-Database_api/video-webp/${selectedWord.id.padStart(8, '0')}.webp`}
+                      alt={language === 'en' ? (selectedWord.engword || selectedWord.word) : selectedWord.word}
                       className="sign-video"
                       onError={(e) => {
                         console.error('Failed to load image:', e.target.src)
