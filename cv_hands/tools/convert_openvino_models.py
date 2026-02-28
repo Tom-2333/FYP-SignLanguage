@@ -5,6 +5,7 @@ Requires: openvino-dev (for Model Optimizer).
 import os
 import sys
 import subprocess
+import logging
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -27,7 +28,29 @@ MODEL_SPECS = [
 ]
 
 
-def run_mo(input_model: Path, output_dir: Path, model_name: str):
+def setup_logger() -> logging.Logger:
+    logger = logging.getLogger("openvino_convert")
+    if logger.handlers:
+        return logger
+
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    log_path = MODEL_DIR / "openvino_convert.log"
+    file_handler = logging.FileHandler(log_path, encoding="utf-8")
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    logger.info("Logging to %s", log_path)
+    return logger
+
+
+def run_mo(input_model: Path, output_dir: Path, model_name: str, logger: logging.Logger):
     cmd = [
         sys.executable,
         "-m",
@@ -39,11 +62,11 @@ def run_mo(input_model: Path, output_dir: Path, model_name: str):
         "--model_name",
         model_name,
     ]
-    print("Running:", " ".join(cmd))
+    logger.info("Running: %s", " ".join(cmd))
     subprocess.check_call(cmd)
 
 
-def convert_from_keras(keras_path: Path, output_dir: Path, model_name: str):
+def convert_from_keras(keras_path: Path, output_dir: Path, model_name: str, logger: logging.Logger):
     import tensorflow as tf
 
     saved_model_dir = output_dir / f"{model_name}_saved_model"
@@ -54,12 +77,15 @@ def convert_from_keras(keras_path: Path, output_dir: Path, model_name: str):
                 os.remove(Path(root) / name)
             for name in dirs:
                 os.rmdir(Path(root) / name)
+        logger.info("Cleaned old SavedModel dir: %s", saved_model_dir)
     model = tf.keras.models.load_model(keras_path, compile=False)
     model.save(saved_model_dir)
-    run_mo(saved_model_dir, output_dir, model_name)
+    logger.info("Exported Keras -> SavedModel: %s", saved_model_dir)
+    run_mo(saved_model_dir, output_dir, model_name, logger)
 
 
 def main():
+    logger = setup_logger()
     output_dir = MODEL_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -70,32 +96,32 @@ def main():
 
         if tflite_path.exists():
             try:
-                run_mo(tflite_path, output_dir, model_name)
-                print(f"Converted: {tflite_path.name} -> {model_name}.xml/.bin")
+                run_mo(tflite_path, output_dir, model_name, logger)
+                logger.info("Converted: %s -> %s.xml/.bin", tflite_path.name, model_name)
                 continue
             except subprocess.CalledProcessError as exc:
-                print(f"TFLite conversion failed for {tflite_path.name}: {exc}")
+                logger.error("TFLite conversion failed for %s: %s", tflite_path.name, exc)
         else:
-            print(f"Skip: {tflite_path} not found")
+            logger.warning("Skip: %s not found", tflite_path)
 
         saved_model_dir = spec.get("saved_model")
         if saved_model_dir and saved_model_dir.exists():
             try:
-                run_mo(saved_model_dir, output_dir, model_name)
-                print(f"Converted: {saved_model_dir.name} -> {model_name}.xml/.bin")
+                run_mo(saved_model_dir, output_dir, model_name, logger)
+                logger.info("Converted: %s -> %s.xml/.bin", saved_model_dir.name, model_name)
                 continue
             except subprocess.CalledProcessError as exc:
-                print(f"SavedModel conversion failed for {saved_model_dir.name}: {exc}")
+                logger.error("SavedModel conversion failed for %s: %s", saved_model_dir.name, exc)
 
         if keras_path.exists():
             try:
-                convert_from_keras(keras_path, output_dir, model_name)
-                print(f"Converted: {keras_path.name} -> {model_name}.xml/.bin")
+                convert_from_keras(keras_path, output_dir, model_name, logger)
+                logger.info("Converted: %s -> %s.xml/.bin", keras_path.name, model_name)
                 continue
             except Exception as exc:
-                print(f"Keras conversion failed for {keras_path.name}: {exc}")
+                logger.exception("Keras conversion failed for %s: %s", keras_path.name, exc)
         else:
-            print(f"Skip: {keras_path} not found")
+            logger.warning("Skip: %s not found", keras_path)
 
 
 if __name__ == "__main__":
