@@ -12,7 +12,7 @@ const getConfidence = (wordId) => {
 }
 
 export default function Vocabulary() {
-  const { language, t } = useLanguage()
+  const { language, setLanguage, t } = useLanguage()
   const videoRef = useRef(null)
 
   const canvasRef = useRef(null)

@@ -16,6 +16,8 @@ export default function ChatBox() {
   const [messages, setMessages] = useState([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [genError, setGenError] = useState('')
+  const [fallbackNotice, setFallbackNotice] = useState('')
+  const [grokExtraData, setGrokExtraData] = useState(null)
   const [selectedWords, setSelectedWords] = useState([])
   const [signWords, setSignWords] = useState([])
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || '100%')
@@ -75,7 +77,7 @@ export default function ChatBox() {
       setSignWords(selectedWords)
       const vocabList = words.join(', ')
       const prompt = signLanguagePrompt.replace('詞彙文件「keypoint_sequence_classifier_label.csv」內容（所有詞彙必須來自此列表，不能添加外部詞彙）', `詞彙文件「keypoint_sequence_classifier_label.csv」內容（所有詞彙必須來自此列表，不能添加外部詞彙）：${vocabList}`)
-      generateGeminiReply(prompt)
+      generateGrokReply(prompt)
     } catch (error) {
       console.error('Error loading words:', error)
     }
@@ -135,65 +137,122 @@ export default function ChatBox() {
     setHistory([newEntry, ...history])
     setMessages(prev => ([...prev, { id: uuidv4(), role: 'user', text: userText }]))
     setInput('')
-    generateGeminiReply(userText)
+    generateGrokReply(userText)
   }
 
-  const generateGeminiReply = async (promptText) => {
+  const generateGrokReply = async (promptText) => {
     if (isCamOpen) return
-    const apiKey = process.env.REACT_APP_NVIDIA_API_KEY
-    const model = process.env.REACT_APP_NVIDIA_MODEL || 'minimaxai/minimax-m2.1'
-    if (!apiKey) {
-      setGenError('Missing NVIDIA API Key, please set REACT_APP_NVIDIA_API_KEY in .env')
-      return
+    const envApiUrl = (process.env.REACT_APP_GROK_API_URL || '').trim()
+    const apiUrl = (!envApiUrl || envApiUrl === '/ask' || envApiUrl === 'ask')
+      ? '/api/grok/ask'
+      : envApiUrl
+    const model = process.env.REACT_APP_GROK_MODEL || 'grok-3-fast'
+    const proxy = process.env.REACT_APP_GROK_PROXY || ''
+
+    const appendAssistantMessage = (rawReply) => {
+      const normalMatch = rawReply.match(/正常原句[:：]\s*([^\n]+)/)
+      const signMatch = rawReply.match(/手語表達[:：]\s*([^\n]+)/)
+      const normalLine = normalMatch ? `正常原句：${normalMatch[1].trim()}` : ''
+      const signLine = signMatch ? `手語表達：${signMatch[1].trim()}` : ''
+      const assistantText = (normalLine || signLine)
+        ? [normalLine, signLine].filter(Boolean).join('\n')
+        : rawReply.slice(0, 200) || '(No reply)'
+
+      if (signLine) {
+        const signText = signLine.replace(/^手語表達[:：]/, '').trim()
+        const parsedSignWords = signText.split(/\s+/).filter(w => w.trim())
+        setSignWords(parsedSignWords)
+      }
+
+      setMessages(prev => ([...prev, { id: uuidv4(), role: 'assistant', text: assistantText }]))
+      return assistantText
     }
 
-    setGenError('')
-    setIsGenerating(true)
-    const requestNvidiaCompletion = async (timeoutMs, maxTokens) => {
+    const tryNvidiaFallback = async () => {
+      const nvidiaApiKey = process.env.REACT_APP_NVIDIA_API_KEY
+      if (!nvidiaApiKey) return false
+
+      const nvidiaModel = process.env.REACT_APP_NVIDIA_MODEL || 'minimaxai/minimax-m2.1'
       const controller = new AbortController()
-      const requestTimeoutId = setTimeout(() => controller.abort(), timeoutMs)
+      const timeoutId = setTimeout(() => controller.abort(), 45000)
       try {
-        return await fetch('/v1/chat/completions', {
+        const resp = await fetch('/api/nvidia/chat/completions', {
           method: 'POST',
           signal: controller.signal,
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiKey}`
+            Authorization: `Bearer ${nvidiaApiKey}`
           },
           body: JSON.stringify({
-            model,
+            model: nvidiaModel,
             messages: [
               { role: 'system', content: '請只輸出最終答案，不要輸出任何思考過程、推理過程、<think>標籤或中間草稿。請嚴格按照「正常原句」與「手語表達」兩行格式輸出。' },
               { role: 'user', content: promptText }
             ],
             temperature: 0.3,
             top_p: 0.9,
-            max_tokens: maxTokens,
+            max_tokens: 256,
             stream: false
           })
+        })
+
+        if (!resp.ok) return false
+        const data = await resp.json()
+        const rawReply = (data?.choices?.[0]?.message?.content || '').trim()
+        appendAssistantMessage(rawReply)
+        setGenError('')
+        setFallbackNotice('系統提示：Grok 暫時不可用，已自動切換至 NVIDIA 備援模型。')
+        return true
+      } catch (_) {
+        return false
+      } finally {
+        clearTimeout(timeoutId)
+      }
+    }
+
+    setGenError('')
+  setFallbackNotice('')
+    setIsGenerating(true)
+    const requestGrokResponse = async (timeoutMs) => {
+      const controller = new AbortController()
+      const requestTimeoutId = setTimeout(() => controller.abort(), timeoutMs)
+      try {
+        const requestBody = {
+          proxy,
+          message: promptText,
+          model
+        }
+        if (grokExtraData && typeof grokExtraData === 'object') {
+          requestBody.extra_data = grokExtraData
+        }
+
+        return await fetch(apiUrl, {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
         })
       } finally {
         clearTimeout(requestTimeoutId)
       }
     }
     try {
-      console.log('Sending request to NVIDIA API with prompt:', promptText)
+        console.log('Sending request to Grok API with prompt:', promptText)
       let resp
       try {
-        resp = await requestNvidiaCompletion(45000, 256)
+          resp = await requestGrokResponse(45000)
       } catch (err) {
         if (err?.name !== 'AbortError') throw err
-        console.warn('First attempt timed out, retrying with lower token budget...')
-        resp = await requestNvidiaCompletion(60000, 128)
+          console.warn('First attempt timed out, retrying...')
+          resp = await requestGrokResponse(60000)
       }
       console.log('Response status:', resp.status)
       if (!resp.ok) {
         let errText = ''
         try { errText = await resp.text() } catch (_) { }
         console.error('API Error:', resp.status, errText)
-        if (resp.status === 401 || resp.status === 403) {
-          throw new Error('Unauthorized. Please check your NVIDIA API key.')
-        }
         if (resp.status === 429) {
           throw new Error('Rate limited. Please wait and try again.')
         }
@@ -205,33 +264,32 @@ export default function ChatBox() {
         } catch (_) {
           detail = errText?.substring(0, 200) || ''
         }
-        throw new Error(`NVIDIA API Error (${resp.status}): ${detail || 'Unknown error'}`)
+        throw new Error(`Grok API Error (${resp.status}): ${detail || 'Unknown error'}`)
       }
 
       const data = await resp.json()
       console.log('API Response data:', data)
-      const msg = data?.choices?.[0]?.message
-      const rawReply = (msg?.content || '').trim()
-      // Extract 正常原句 and 手語表達 directly from rawReply,
-      // regardless of any leading reasoning/think text before them.
-      const normalMatch = rawReply.match(/正常原句[:：]\s*([^\n]+)/)
-      const signMatch = rawReply.match(/手語表達[:：]\s*([^\n]+)/)
-      const normalLine = normalMatch ? `正常原句：${normalMatch[1].trim()}` : ''
-      const signLine = signMatch ? `手語表達：${signMatch[1].trim()}` : ''
-      const assistantText = (normalLine || signLine)
-        ? [normalLine, signLine].filter(Boolean).join('\n')
-        : rawReply.slice(0, 200) || '(No reply)'
-      console.log('Extracted reply:', assistantText)
-      if (signLine) {
-        const signText = signLine.replace(/^手語表達[:：]/, '').trim()
-        const parsedSignWords = signText.split(/\s+/).filter(w => w.trim())
-        setSignWords(parsedSignWords)
+      if (data?.error) {
+        throw new Error(data.error)
       }
-      setMessages(prev => ([...prev, { id: uuidv4(), role: 'assistant', text: assistantText }]))
+      const rawReply = (data?.response || '').trim()
+      if (data?.extra_data) {
+        setGrokExtraData(data.extra_data)
+      }
+      const assistantText = appendAssistantMessage(rawReply)
+      console.log('Extracted reply:', assistantText)
     } catch (err) {
       console.error('Generation error:', err)
       if (err?.name === 'AbortError') {
         setGenError('Generation timeout after retry: the model is currently slow, please try again.')
+        return
+      }
+      const fallbackSucceeded = await tryNvidiaFallback()
+      if (fallbackSucceeded) {
+        return
+      }
+      if (err?.message?.includes('Error occurred while trying to proxy') || err?.message?.includes('Failed to fetch')) {
+        setGenError('Grok service is unreachable. Please start Grok-Api server on http://localhost:6969 and retry.')
         return
       }
       setGenError(`Generation failed: ${err.message || 'please try again later'}`)
@@ -354,6 +412,9 @@ export default function ChatBox() {
           )}
           {genError && (
             <div className="chat-error">{genError}</div>
+          )}
+          {fallbackNotice && (
+            <div className="chat-bubble assistant">{fallbackNotice}</div>
           )}
         </div>
 

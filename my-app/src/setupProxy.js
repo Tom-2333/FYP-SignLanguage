@@ -10,4 +10,14 @@ module.exports = function (app) {
       secure: true,
     })
   )
+
+  app.use(
+    '/api/grok',
+    createProxyMiddleware({
+      target: 'http://localhost:6969',
+      changeOrigin: true,
+      pathRewrite: { '^/api/grok': '' },
+      secure: false,
+    })
+  )
 }
