@@ -1,0 +1,127 @@
+.auth-page {
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3% 2%;
+  background: var(--bg, #F8FAFC);
+}
+
+.auth-card {
+  width: 90%;
+  max-width: 420px;
+  background: var(--surface, #FFFFFF);
+  border-radius: 0.75rem;
+  padding: 2.5%;
+  box-shadow: 0 10px 40px var(--shadow, rgba(15, 23, 42, 0.08));
+  font-family: Inter, Segoe UI, Roboto, Arial;
+  color: var(--text, #0F172A);
+}
+
+.auth-card h2 {
+  margin: 0 0 1rem;
+  color: var(--text, #0F172A);
+}
+
+.auth-form .field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.8rem;
+}
+
+.auth-form .label {
+  font-size: 0.85rem;
+  color: var(--text-muted, #475569);
+  margin-bottom: 0.4rem;
+}
+
+.auth-form input {
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border, #E2E8F0);
+  font-size: 0.95rem;
+  background: var(--surface, #FFFFFF);
+  color: var(--text, #0F172A);
+}
+
+.auth-form input:focus {
+  outline: none;
+  border-color: var(--primary, #2563EB);
+}
+
+.error {
+  color: var(--error, #DC2626);
+  background: var(--error-15, rgba(220, 38, 38, 0.1));
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+button.primary {
+  background: var(--primary, #2563EB);
+  color: var(--on-primary, #fff);
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+button.primary:hover {
+  background: var(--primary-hover, #1D4ED8);
+}
+
+button.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+  color: var(--text-muted, #475569);
+}
+
+button.link {
+  background: none;
+  border: none;
+  color: var(--primary, #2563EB);
+  cursor: pointer;
+  padding: 6px;
+  font-weight: 500;
+}
+
+button.link:hover {
+  color: var(--primary-hover, #1D4ED8);
+}
+
+.alt-links {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.alt-links a {
+  color: var(--text-muted, #475569);
+  text-decoration: none;
+}
+
+.alt-links a:hover {
+  color: var(--primary, #2563EB);
+}
+
+@media (max-width: 520px) {
+  .auth-card {
+    width: 100%;
+    padding: 18px;
+  }
+}
