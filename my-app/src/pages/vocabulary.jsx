@@ -12,6 +12,7 @@ const getConfidence = (wordId) => {
 }
 
 export default function Vocabulary() {
+  const apiBase = process.env.REACT_APP_GESTURE_API || 'http://127.0.0.1:5001'
   const { language, setLanguage, t } = useLanguage()
   const videoRef = useRef(null)
 
@@ -31,6 +32,17 @@ export default function Vocabulary() {
   const [dictionaryData, setDictionaryData] = useState({}) // Dictionary data fetched from API
   const [gestureServiceOnline, setGestureServiceOnline] = useState(false) // Python service reachability
   const [streamError, setStreamError] = useState(false)
+  const [streamFrameUrl, setStreamFrameUrl] = useState('')
+  const [showDiagnostics, setShowDiagnostics] = useState(false)
+  const [wsStatus, setWsStatus] = useState('connecting')
+  const [wsError, setWsError] = useState('')
+  const [lastWsMessageAt, setLastWsMessageAt] = useState(null)
+  const [healthInfo, setHealthInfo] = useState({
+    status: 'checking',
+    latencyMs: null,
+    error: '',
+    lastCheckedAt: null
+  })
   const frameThrottleRef = useRef(0) // Throttle MediaPipe frames to lower CPU
   const userName = localStorage.getItem('userName') || 'User'
   const userId = localStorage.getItem('userId')
@@ -188,43 +200,125 @@ export default function Vocabulary() {
     }
   }, [])
 
-  // Fetch gesture data from Python API
+  // Real-time gesture + frame updates from WebSocket
   useEffect(() => {
     let active = true
-    const fetchGestureData = async () => {
-      try {
-        const response = await fetch('http://localhost:5001/gesture', {
-          signal: AbortSignal.timeout(1000)  // Add 1 second timeout to prevent hanging
-        })
-        if (!response.ok) throw new Error('Failed to fetch gesture data')
-        const data = await response.json()
+    let socket = null
+    let reconnectTimer = null
+
+    const wsBase = apiBase.replace(/^http/i, 'ws')
+    const wsUrl = `${wsBase}/api/v1/ws/gesture`
+
+    const connect = () => {
+      if (!active) return
+      setWsStatus('connecting')
+      socket = new WebSocket(wsUrl)
+
+      socket.onopen = () => {
         if (!active) return
-        setGestureData(data)
+        setWsStatus('online')
+        setWsError('')
         setGestureServiceOnline(true)
-        // Update detected gesture for display
-        if (data.sequence_gesture_text) {
-          setDetectedGesture(`Sequence: ${data.sequence_gesture_text}`)
-        } else if (data.hand_sign_text) {
-          setDetectedGesture(`Hand Sign: ${data.hand_sign_text}`)
-        } else {
-          setDetectedGesture('No gesture detected')
+        setStreamError(false)
+      }
+
+      socket.onmessage = (event) => {
+        if (!active) return
+        try {
+          const payload = JSON.parse(event.data)
+          const data = payload?.gesture || {}
+          setLastWsMessageAt(Date.now())
+          setGestureData(data)
+
+          if (data.sequence_gesture_text) {
+            setDetectedGesture(`Sequence: ${data.sequence_gesture_text}`)
+          } else if (data.hand_sign_text) {
+            setDetectedGesture(`Hand Sign: ${data.hand_sign_text}`)
+          } else {
+            setDetectedGesture('No gesture detected')
+          }
+
+          if (payload?.frame_data_url) {
+            setStreamFrameUrl(payload.frame_data_url)
+            setCameraAllowed(true)
+            setStreamError(false)
+          }
+        } catch (error) {
+          console.error('Invalid WebSocket payload:', error)
         }
-      } catch (error) {
-        if (error.name === 'AbortError') return
-        console.error('Error fetching gesture data:', error)
+      }
+
+      socket.onerror = () => {
+        if (!active) return
+        setWsStatus('error')
+        setWsError('WebSocket error')
         setGestureServiceOnline(false)
-        setDetectedGesture('Gesture detection unavailable')
+        setStreamError(true)
+      }
+
+      socket.onclose = () => {
+        if (!active) return
+        setWsStatus('reconnecting')
+        setGestureServiceOnline(false)
+        reconnectTimer = setTimeout(connect, 1200)
       }
     }
 
-    // Fetch immediately and then every 3 seconds (optimized to reduce lag)
-    fetchGestureData()
-    const interval = setInterval(fetchGestureData, 3000)
+    connect()
+
     return () => {
       active = false
-      clearInterval(interval)
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+      if (socket) socket.close()
     }
-  }, [])
+  }, [apiBase])
+
+  // Lightweight health check for frontend diagnostics
+  useEffect(() => {
+    let active = true
+    let intervalId = null
+
+    const healthUrl = `${apiBase}/api/v1/health`
+
+    const checkHealth = async () => {
+      const started = performance.now()
+      try {
+        const response = await fetch(healthUrl, {
+          signal: AbortSignal.timeout(1500)
+        })
+        const latencyMs = Math.round(performance.now() - started)
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        if (!active) return
+        setHealthInfo({
+          status: 'online',
+          latencyMs,
+          error: '',
+          lastCheckedAt: Date.now()
+        })
+      } catch (error) {
+        if (!active) return
+        setHealthInfo({
+          status: 'offline',
+          latencyMs: null,
+          error: error?.message || 'health check failed',
+          lastCheckedAt: Date.now()
+        })
+      }
+    }
+
+    checkHealth()
+    intervalId = setInterval(checkHealth, 8000)
+
+    return () => {
+      active = false
+      if (intervalId) clearInterval(intervalId)
+    }
+  }, [apiBase])
+
+  const formatTimestamp = (ts) => {
+    if (!ts) return 'N/A'
+    return new Date(ts).toLocaleTimeString()
+  }
 
   // Fetch completed words for user
   useEffect(() => {
@@ -687,7 +781,7 @@ export default function Vocabulary() {
             </div>
             <div className="cam-wrap">
               <img
-                src="http://localhost:5001/stream"
+                src={streamFrameUrl || `${apiBase}/api/v1/stream`}
                 alt="Camera Stream"
                 className="live"
                 onLoad={() => {
@@ -716,11 +810,50 @@ export default function Vocabulary() {
             {/* Gesture Detection Results */}
             <div className="gesture-results">
               <div className="gesture-header">
-                <span>{t('vocab.gestureRecognition')}</span>
-                <span className={`gesture-status ${gestureServiceOnline ? 'online' : 'offline'}`}>
-                  {gestureServiceOnline ? t('vocab.connected') : t('vocab.offline')}
-                </span>
+                <div className="gesture-header-left">
+                  <span>{t('vocab.gestureRecognition')}</span>
+                  <span className={`gesture-status ${gestureServiceOnline ? 'online' : 'offline'}`}>
+                    {gestureServiceOnline ? t('vocab.connected') : t('vocab.offline')}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="diag-toggle-btn"
+                  onClick={() => setShowDiagnostics((prev) => !prev)}
+                >
+                  {showDiagnostics ? 'Hide Diagnostics' : 'Show Diagnostics'}
+                </button>
               </div>
+              {showDiagnostics && (
+                <div className="gesture-diagnostics">
+                  <div className="diagnostic-title">Diagnostics</div>
+                  <div className="diagnostic-row">
+                    <span>WebSocket</span>
+                    <span className={`diag-badge diag-${wsStatus}`}>{wsStatus}</span>
+                  </div>
+                  <div className="diagnostic-row">
+                    <span>Health API</span>
+                    <span className={`diag-badge diag-${healthInfo.status}`}>{healthInfo.status}</span>
+                  </div>
+                  <div className="diagnostic-row">
+                    <span>Health latency</span>
+                    <span>{healthInfo.latencyMs != null ? `${healthInfo.latencyMs} ms` : 'N/A'}</span>
+                  </div>
+                  <div className="diagnostic-row">
+                    <span>Last WS message</span>
+                    <span>{formatTimestamp(lastWsMessageAt)}</span>
+                  </div>
+                  <div className="diagnostic-row">
+                    <span>Last health check</span>
+                    <span>{formatTimestamp(healthInfo.lastCheckedAt)}</span>
+                  </div>
+                  <div className="diagnostic-meta">WS: {`${apiBase.replace(/^http/i, 'ws')}/api/v1/ws/gesture`}</div>
+                  <div className="diagnostic-meta">Health: {`${apiBase}/api/v1/health`}</div>
+                  {(wsError || healthInfo.error) && (
+                    <div className="diagnostic-error">{wsError || healthInfo.error}</div>
+                  )}
+                </div>
+              )}
               {gestureServiceOnline ? (
                 <>
                   {gestureData.sequence_gesture_text && (
@@ -755,15 +888,15 @@ export default function Vocabulary() {
                 </>
               ) : (
                 <div className="gesture-offline">
-                  Connecting to gesture detection server...<br />
+                  {t('vocab.connecting')}<br />
                   <div className="gesture-offline-box">
                     <strong>{t('vocab.gestureOfflineTitle')}</strong><br />
                     {t('vocab.gestureOfflineStep1')}<br />
-                    {t('vocab.gestureOfflineStep2')} <code className="inline-code">cd /Users/ronald8931/Desktop/FYP-SL_conn_POE/cv_hands</code><br />
-                    3. Run: <code className="inline-code">python3 app_simple.py</code><br />
+                    {t('vocab.gestureOfflineStep2')} <code className="inline-code">cd d:/Profile/Documents/GitHub/FYP-SignLanguage/cv_hands</code><br />
+                    {t('vocab.gestureOfflineStep3')} <code className="inline-code">py -3.10 app_simple.py</code><br />
                     <div className="gesture-offline-note">
-                      {t('vocab.gestureOfflineNote1')} <strong>http://localhost:5001</strong><br />
-                      {t('vocab.gestureOfflineNote2')} <strong>http://localhost:5001/docs</strong>
+                      {t('vocab.gestureOfflineNote1')} <strong>{apiBase}</strong><br />
+                      {t('vocab.gestureOfflineNote2')} <strong>{`${apiBase}/docs`}</strong>
                     </div>
                   </div>
                 </div>

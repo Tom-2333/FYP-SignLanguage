@@ -9,7 +9,9 @@ import math
 import copy
 import os
 import platform
-from fastapi import FastAPI
+import asyncio
+import base64
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import threading
@@ -25,13 +27,21 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 # FastAPI app for API
 app = FastAPI(title="Gesture Detection API", version="1.0.0")
 
+API_PREFIX = "/api/v1"
+WS_PUSH_INTERVAL = float(os.getenv("WS_PUSH_INTERVAL", "0.05"))
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+    if origin.strip()
+]
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Global variables for gesture results
@@ -43,7 +53,9 @@ current_gesture_data = {
     "fps": 0
 }
 latest_frame = None
+latest_frame_data_url = None
 frame_lock = threading.Lock()
+gesture_lock = threading.Lock()
 
 # Initialize MediaPipe Solutions (legacy API - no model files needed)
 mp_hands = mp.solutions.hands
@@ -58,6 +70,9 @@ ENABLE_FACE_POSE = os.getenv("ENABLE_FACE_POSE", "1") == "1"
 FACE_POSE_INTERVAL = int(os.getenv("FACE_POSE_INTERVAL", "1"))
 HANDS_MODEL_COMPLEXITY = int(os.getenv("HANDS_MODEL_COMPLEXITY", "1"))
 POSE_MODEL_COMPLEXITY = int(os.getenv("POSE_MODEL_COMPLEXITY", "1"))
+CLASSIFIER_THREADS = int(os.getenv("CLASSIFIER_THREADS", "4"))
+FRAME_BASE64_INTERVAL = int(os.getenv("FRAME_BASE64_INTERVAL", "2"))
+SEQUENCE_INFER_INTERVAL = int(os.getenv("SEQUENCE_INFER_INTERVAL", "2"))
 
 hands = mp_hands.Hands(
     static_image_mode=False,
@@ -84,10 +99,12 @@ pose = mp_pose.Pose(
 
 # Load gesture classifiers with absolute paths
 keypoint_classifier = KeyPointClassifier(
-    model_path=os.path.join(SCRIPT_DIR, 'model/keypoint_classifier/keypoint_classifier.tflite')
+    model_path=os.path.join(SCRIPT_DIR, 'model/keypoint_classifier/keypoint_classifier.tflite'),
+    num_threads=max(CLASSIFIER_THREADS, 1)
 )
 keypoint_sequence_classifier = KeyPointSequenceClassifier(
-    model_path=os.path.join(SCRIPT_DIR, 'model/keypoint_classifier/keypoint_sequence_classifier.tflite')
+    model_path=os.path.join(SCRIPT_DIR, 'model/keypoint_classifier/keypoint_sequence_classifier.tflite'),
+    num_threads=max(CLASSIFIER_THREADS, 1)
 )
 print(f"🧠 Hand classifier backend: {getattr(keypoint_classifier, 'backend', 'unknown')}")
 print(f"🧠 Sequence classifier backend: {getattr(keypoint_sequence_classifier, 'backend', 'unknown')}")
@@ -185,14 +202,22 @@ def extract_face_features(face_landmarks, image):
         mouth_openness = lower_lip - upper_lip
         features.append(mouth_openness)
 
-        # Eye gaze direction
+        # Eye gaze direction (x-axis and y-axis)
         left_eye_left = face_landmarks.landmark[133].x
         left_eye_right = face_landmarks.landmark[33].x
         right_eye_left = face_landmarks.landmark[263].x
         right_eye_right = face_landmarks.landmark[362].x
         left_gaze_x = (left_eye_left + left_eye_right) / 2 - nose.x
         right_gaze_x = (right_eye_left + right_eye_right) / 2 - nose.x
-        features.extend([left_gaze_x, right_gaze_x])
+        left_gaze_y = (left_eye_top + left_eye_bottom) / 2 - nose.y
+        right_gaze_y = (right_eye_top + right_eye_bottom) / 2 - nose.y
+        features.extend([left_gaze_x, right_gaze_x, left_gaze_y, right_gaze_y])
+
+        # Keep feature dimension stable for downstream models.
+        if len(features) < 10:
+            features.extend([0.0] * (10 - len(features)))
+        elif len(features) > 10:
+            features = features[:10]
 
         return features
     except (AttributeError, IndexError, TypeError):
@@ -377,6 +402,7 @@ def gesture_detection_loop():
     """Main gesture detection loop running in separate thread"""
     global current_gesture_data
     global latest_frame
+    global latest_frame_data_url
     
     cap, cam_index = open_camera()
     cap.set(cv.CAP_PROP_FRAME_WIDTH, 640)
@@ -398,6 +424,7 @@ def gesture_detection_loop():
     last_face_landmarks = None
     last_pose_landmarks = None
     last_pre_processed_landmark = None
+    last_sequence_gesture_text = ""
     
     print("🎥 Camera started - Gesture detection active!")
     print("👋 Show your hand to the camera to test detection...")
@@ -437,7 +464,7 @@ def gesture_detection_loop():
             last_pose_landmarks = pose_results.pose_landmarks if pose_results.pose_landmarks else None
         
         hand_sign_text = ""
-        sequence_gesture_text = ""
+        sequence_gesture_text = last_sequence_gesture_text
         handedness_text = ""
         
         # Extract face and pose landmarks
@@ -490,7 +517,10 @@ def gesture_detection_loop():
                 keypoint_sequence.append(list(ZERO_FEATURE_VECTOR))
 
         # Sequence classification (run every frame once enough frames are collected)
-        if len(keypoint_sequence) >= sequence_length:
+        if (
+            len(keypoint_sequence) >= sequence_length
+            and frame_index % max(SEQUENCE_INFER_INTERVAL, 1) == 0
+        ):
             seq = list(keypoint_sequence)
             if len(seq) < sequence_length:
                 seq.extend([seq[-1]] * (sequence_length - len(seq)))
@@ -511,6 +541,7 @@ def gesture_detection_loop():
                 # Majority vote over last few frames
                 most_common = max(set(sequence_gesture_history), key=sequence_gesture_history.count)
                 sequence_gesture_text = keypoint_sequence_classifier_labels[most_common]
+                last_sequence_gesture_text = sequence_gesture_text
         
         # Draw face and pose landmarks (optional - for debugging)
         # if face_landmarks:
@@ -539,18 +570,26 @@ def gesture_detection_loop():
         #     break
         
         # Update global gesture data
-        current_gesture_data.update({
-            "hand_sign_text": hand_sign_text,
-            "finger_gesture_text": handedness_text,
-            "sequence_gesture_text": sequence_gesture_text,
-            "handedness": handedness_text,
-            "fps": current_fps
-        })
+        with gesture_lock:
+            current_gesture_data.update({
+                "hand_sign_text": hand_sign_text,
+                "finger_gesture_text": handedness_text,
+                "sequence_gesture_text": sequence_gesture_text,
+                "handedness": handedness_text,
+                "fps": current_fps
+            })
         # Store latest frame for browser streaming
         success, jpeg = cv.imencode('.jpg', frame)
         if success:
+            frame_bytes = jpeg.tobytes()
             with frame_lock:
-                latest_frame = jpeg.tobytes()
+                latest_frame = frame_bytes
+
+            # Base64 conversion is expensive; update data URL only every N frames.
+            if frame_index % max(FRAME_BASE64_INTERVAL, 1) == 0:
+                frame_data_url = "data:image/jpeg;base64," + base64.b64encode(frame_bytes).decode("ascii")
+                with frame_lock:
+                    latest_frame_data_url = frame_data_url
         frame_index += 1
         
         # Small delay to prevent excessive CPU usage
@@ -564,7 +603,25 @@ def gesture_detection_loop():
 @app.get('/gesture')
 async def get_gesture():
     """API endpoint to get current gesture data"""
-    return JSONResponse(content=current_gesture_data)
+    with gesture_lock:
+        payload = dict(current_gesture_data)
+
+    payload["hands"] = []
+    hand_sign = payload.get("hand_sign_text", "")
+    handedness = payload.get("handedness", "")
+    if hand_sign or handedness:
+        payload["hands"].append({
+            "hand": handedness or "Unknown",
+            "gesture": hand_sign or ""
+        })
+
+    return JSONResponse(content=payload)
+
+
+@app.get(f'{API_PREFIX}/gesture')
+async def get_gesture_v1():
+    """Versioned API endpoint for current gesture data"""
+    return await get_gesture()
 
 
 def mjpeg_stream():
@@ -586,10 +643,57 @@ async def stream():
     return StreamingResponse(mjpeg_stream(), media_type='multipart/x-mixed-replace; boundary=frame')
 
 
+@app.get(f'{API_PREFIX}/stream')
+async def stream_v1():
+    """Versioned MJPEG stream endpoint."""
+    return await stream()
+
+
+def build_ws_payload():
+    """Build a real-time payload for WebSocket clients."""
+    with gesture_lock:
+        gesture_snapshot = dict(current_gesture_data)
+    with frame_lock:
+        frame_data = latest_frame_data_url
+
+    gesture_snapshot["hands"] = []
+    if gesture_snapshot.get("hand_sign_text") or gesture_snapshot.get("handedness"):
+        gesture_snapshot["hands"].append({
+            "hand": gesture_snapshot.get("handedness") or "Unknown",
+            "gesture": gesture_snapshot.get("hand_sign_text") or ""
+        })
+
+    return {
+        "gesture": gesture_snapshot,
+        "frame_data_url": frame_data,
+        "timestamp": time.time(),
+    }
+
+
+@app.websocket(f"{API_PREFIX}/ws/gesture")
+async def ws_gesture_stream(websocket: WebSocket):
+    """Bi-directional low-latency stream for gesture results and frames."""
+    await websocket.accept()
+    try:
+        while True:
+            await websocket.send_json(build_ws_payload())
+            await asyncio.sleep(max(WS_PUSH_INTERVAL, 0.01))
+    except WebSocketDisconnect:
+        return
+    except Exception as exc:
+        print(f"⚠️ WebSocket stream closed: {exc}")
+
+
 @app.get('/health')
 async def health_check():
     """Health check endpoint"""
-    return JSONResponse(content={"status": "online", "gesture_detection": "active"})
+    return JSONResponse(content={"status": "online", "gesture_detection": "active", "api_version": "v1"})
+
+
+@app.get(f'{API_PREFIX}/health')
+async def health_check_v1():
+    """Versioned health check endpoint"""
+    return await health_check()
 
 
 if __name__ == '__main__':
@@ -602,8 +706,12 @@ if __name__ == '__main__':
     print("=" * 60)
     print("📡 FastAPI Server: http://localhost:5001")
     print("🔍 Gesture endpoint: http://localhost:5001/gesture")
+    print(f"🔍 Gesture v1 endpoint: http://localhost:5001{API_PREFIX}/gesture")
     print("💚 Health check: http://localhost:5001/health")
+    print(f"💚 Health check v1: http://localhost:5001{API_PREFIX}/health")
     print("📺 Stream endpoint: http://localhost:5001/stream")
+    print(f"📺 Stream v1 endpoint: http://localhost:5001{API_PREFIX}/stream")
+    print(f"⚡ WebSocket: ws://localhost:5001{API_PREFIX}/ws/gesture")
     print("📖 API Docs: http://localhost:5001/docs")
     print("=" * 60)
     

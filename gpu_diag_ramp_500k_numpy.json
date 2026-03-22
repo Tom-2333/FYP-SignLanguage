@@ -1,0 +1,41 @@
+{
+  "results": [
+    {
+      "mode": "numpy",
+      "batch_size": 32,
+      "epochs": 1,
+      "samples": 500000,
+      "ok": true,
+      "error_type": "",
+      "error_msg": "",
+      "seconds": 112.49057936668396,
+      "gpu_memory_before_mb": 938.0,
+      "gpu_memory_after_mb": 5593.0
+    },
+    {
+      "mode": "numpy",
+      "batch_size": 48,
+      "epochs": 1,
+      "samples": 500000,
+      "ok": true,
+      "error_type": "",
+      "error_msg": "",
+      "seconds": 75.93581080436707,
+      "gpu_memory_before_mb": 5592.0,
+      "gpu_memory_after_mb": 5591.0
+    },
+    {
+      "mode": "numpy",
+      "batch_size": 64,
+      "epochs": 1,
+      "samples": 500000,
+      "ok": false,
+      "error_type": "InternalError",
+      "error_msg": "Failed copying input tensor from /job:localhost/replica:0/task:0/device:CPU:0 to /job:localhost/replica:0/task:0/device:GPU:0 in order to run _EagerConst: Dst tensor is not initialized.",
+      "seconds": 10.027990102767944,
+      "gpu_memory_before_mb": 5585.0,
+      "gpu_memory_after_mb": 5602.0
+    }
+  ],
+  "diagnosis": "Likely GPU initialization/copy instability (InternalError dominant)."
+}

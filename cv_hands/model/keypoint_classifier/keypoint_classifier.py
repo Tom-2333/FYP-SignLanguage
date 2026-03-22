@@ -10,6 +10,7 @@ class KeyPointClassifier(object):
         model_path='model/keypoint_classifier/keypoint_classifier.tflite',
         num_threads=1,
     ):
+        self.backend = 'tflite-tensorflow'
         self.interpreter = tf.lite.Interpreter(model_path=model_path,
                                                num_threads=num_threads,
                                                experimental_delegates=[])
