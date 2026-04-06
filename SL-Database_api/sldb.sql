@@ -19,7 +19,7 @@ CREATE TABLE categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     key_name VARCHAR(10) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
-    engname VARCHAR(255) NOT NULL
+    name_en VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE words (
@@ -67,7 +67,7 @@ CREATE TABLE chat_history (
 );
 
 -- Insert categories
-INSERT INTO categories (key_name, name, engname) VALUES
+INSERT INTO categories (key_name, name, name_en) VALUES
 ('A', '情感 / 態度 / 感覺', 'Emotions / Attitudes / Feelings'),
 ('B', '人物 / 家庭 / 社會角色', 'People / Family / Social Roles'),
 ('C', '動作 / 動詞 / 活動', 'Actions / Verbs / Activities'),

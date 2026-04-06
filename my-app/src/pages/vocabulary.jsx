@@ -30,6 +30,7 @@ export default function Vocabulary() {
   const [gestureData, setGestureData] = useState({}) // Detailed gesture data from Python API
   const [handLandmarks, setHandLandmarks] = useState(null) // Hand landmarks data
   const [dictionaryData, setDictionaryData] = useState({}) // Dictionary data fetched from API
+  const [dictionaryError, setDictionaryError] = useState('')
   const [gestureServiceOnline, setGestureServiceOnline] = useState(false) // Python service reachability
   const [streamError, setStreamError] = useState(false)
   const [streamFrameUrl, setStreamFrameUrl] = useState('')
@@ -187,11 +188,17 @@ export default function Vocabulary() {
         const response = await fetch('http://localhost/SL-Database_api/get_words.php')
         if (!response.ok) throw new Error('Failed to fetch data')
         const data = await response.json()
-        if (active) setDictionaryData(data)
+        if (active) {
+          setDictionaryData(data)
+          setDictionaryError('')
+        }
       } catch (error) {
         if (error.name === 'AbortError') return
         console.error('Error fetching dictionary data:', error)
-        // Fallback to empty data or show error
+        if (active) {
+          setDictionaryData({})
+          setDictionaryError(error.message || 'Unknown error')
+        }
       }
     }
     fetchData()
@@ -404,6 +411,10 @@ export default function Vocabulary() {
   }, [onHandsResults])
 
   // Ensure data is loaded before rendering
+  if (dictionaryError) {
+    return <div>{`Failed to load vocabulary data: ${dictionaryError}`}</div>
+  }
+
   if (!dictionaryData || Object.keys(dictionaryData).length === 0) {
     return <div>{t('vocab.loadingData')}</div>
   }
