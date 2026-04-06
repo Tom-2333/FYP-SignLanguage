@@ -12,9 +12,11 @@ class KeyPointSequenceClassifier(object):
         num_threads=1,
     ):
         if not os.path.exists(model_path):
+            self.backend = 'disabled-missing-model'
             self.interpreter = None
             print(f"Warning: Model file {model_path} not found. Sequence classification will be disabled.")
         else:
+            self.backend = 'tflite-tensorflow'
             self.interpreter = tf.lite.Interpreter(model_path=model_path,
                                                    num_threads=num_threads,
                                                    experimental_delegates=[])

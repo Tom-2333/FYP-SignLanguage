@@ -224,22 +224,26 @@
 .controls button.primary{background:var(--accent);color:var(--on-accent);border:none}
 
 /* Camera Box */
-.cam-box{display:flex;flex-direction:column;height:100%}
+.cam-box{display:flex;flex-direction:column;height:auto;overflow:visible}
 .cam-box.is-hidden{display:none}
-.cam-box .cam-wrap{flex:1;position:relative;background:var(--video-surface);min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.cam-box .box-title{display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;overflow:hidden}
+.cam-box .cam-wrap{flex:0 0 auto;position:relative;background:var(--video-surface);display:flex;align-items:center;justify-content:center;overflow:hidden;aspect-ratio:4/3;height:420px;min-height:420px}
 .cam-wrap video.live{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
 .cam-wrap video.hidden{display:none}
-.cam-wrap img.live{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
+.cam-wrap img.live{width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;display:block}
 .cam-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-muted);gap:8px}
 .cam-placeholder-icon{font-size:28px}
-.detected-gesture{margin-left:10px;font-size:14px;color:var(--success)}
+.detected-gesture{margin-left:10px;font-size:14px;color:var(--success);display:inline-block;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hand-detected-badge{position:absolute;bottom:10px;left:10px;background:var(--overlay-70);color:var(--on-primary);padding:8px 12px;border-radius:4px;font-size:12px}
 
-.gesture-results{padding:12px;background:var(--surface);border-top:1px solid var(--border);font-size:14px}
-.gesture-header{font-weight:700;margin-bottom:8px;color:var(--text);display:flex;align-items:center;gap:10px}
+.gesture-results{padding:12px;background:var(--surface);border-top:1px solid var(--border);font-size:14px;flex:0 0 auto}
+.gesture-header{font-weight:700;margin-bottom:8px;color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.gesture-header-left{display:flex;align-items:center;gap:10px}
 .gesture-status{font-size:11px;padding:2px 8px;border-radius:12px;font-weight:400}
 .gesture-status.online{background:var(--success-15);color:var(--success)}
 .gesture-status.offline{background:var(--error-15);color:var(--error)}
+.diag-toggle-btn{border:1px solid var(--border);background:var(--surface);color:var(--text-muted);border-radius:999px;padding:4px 10px;font-size:11px;cursor:pointer}
+.diag-toggle-btn:hover{border-color:var(--primary);color:var(--primary)}
 .gesture-line{margin-bottom:4px}
 .detected-hands{margin-bottom:8px;padding:8px;background:var(--success-10);border-radius:4px}
 .detected-hand-row{margin-top:4px;margin-left:8px}
@@ -251,6 +255,16 @@
 .gesture-offline-box{margin-top:8px;padding:8px;background:var(--warning-15);border-radius:4px;color:var(--warning)}
 .inline-code{background:var(--surface);padding:2px 6px;border-radius:3px}
 .gesture-offline-note{margin-top:6px;font-size:12px}
+
+.gesture-diagnostics{margin-bottom:10px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg)}
+.diagnostic-title{font-weight:700;font-size:12px;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.04em}
+.diagnostic-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:4px;color:var(--text)}
+.diag-badge{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;text-transform:uppercase}
+.diag-online{background:var(--success-15);color:var(--success)}
+.diag-offline,.diag-error{background:var(--error-15);color:var(--error)}
+.diag-connecting,.diag-reconnecting,.diag-checking{background:var(--warning-15);color:var(--warning)}
+.diagnostic-meta{font-size:11px;color:var(--text-muted);margin-top:4px;word-break:break-all}
+.diagnostic-error{font-size:11px;color:var(--error);margin-top:6px;word-break:break-word}
 
 .match-display{margin-top:16px;padding:16px;background:var(--bg);border:2px solid var(--border);border-radius:8px;font-size:16px;font-weight:700;text-align:center;color:var(--text)}
 .match-display.is-match{background:var(--success-15);border-color:var(--success);color:var(--success)}
@@ -312,5 +326,7 @@
   .vocab-sidebar.combined{max-height:none}
   .vocab-content{grid-template-columns:1fr}
   .vocab-card{height:500px}
+  .vocab-card.cam-box{height:auto}
+  .cam-box .cam-wrap{height:320px;min-height:320px}
   .word-grid{grid-template-columns:1fr}
 }

@@ -1,20 +1,11 @@
-# Core runtime (app.py)
-opencv-contrib-python==4.11.0.86
+opencv-python==4.8.0.76
 mediapipe==0.10.14
-numpy==1.26.4
+numpy==1.24.3
 pillow==10.0.0
-protobuf==4.25.8
-tensorflow==2.16.2
-keras==3.12.1
-fastapi==0.115.14
-uvicorn==0.34.3
-
-# Training / evaluation notebooks
-scikit-learn==1.7.2
-pandas==2.3.3
-matplotlib==3.10.8
-seaborn==0.13.2
-
-# Notebook execution
-jupyter==1.1.1
-ipykernel==7.1.0
+tensorflow==2.13.0
+openvino==2023.3.0
+fastapi==0.100.0
+uvicorn==0.23.0
+websockets>=12,<15
+jax
+jaxlib
