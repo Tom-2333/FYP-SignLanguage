@@ -75,6 +75,51 @@
   border-color: var(--primary, #2563EB); 
 }
 
+.history-card.active-session {
+  border-color: var(--primary, #2563EB);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary, #2563EB) 18%, transparent);
+}
+
+.history-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.history-text {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 14rem;
+}
+
+.history-time {
+  font-size: 0.75rem;
+  color: var(--text-muted, #475569);
+}
+
+.new-session-row {
+  margin-bottom: 0.8rem;
+}
+
+.new-session-btn {
+  width: 100%;
+  border: 1px solid var(--border, #E2E8F0);
+  background: var(--surface, #FFFFFF);
+  color: var(--text, #0F172A);
+  border-radius: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.new-session-btn:hover {
+  border-color: var(--primary, #2563EB);
+  color: var(--primary, #2563EB);
+}
+
 .app-main { 
   flex: 1; 
   display: flex; 
@@ -187,12 +232,23 @@
   gap: 0.6rem; 
 }
 
+.chat-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.chat-row.user-row {
+  justify-content: flex-end;
+}
+
 .chat-bubble { 
   max-width: 75%; 
   padding: 0.6rem 0.9rem; 
   border-radius: 0.75rem; 
   line-height: 1.4; 
   font-size: 0.9rem; 
+  white-space: pre-wrap;
 }
 
 .chat-bubble.user { 
@@ -202,9 +258,41 @@
 }
 
 .chat-bubble.assistant { 
-  align-self: flex-start; 
   background: var(--bg, #F8FAFC); 
   color: var(--text, #0F172A); 
+}
+
+.chat-bubble.clickable {
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.chat-bubble.clickable:hover {
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--primary, #2563EB) 20%, transparent);
+  transform: translateY(-2px);
+}
+
+.inline-regen-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border, #E2E8F0);
+  background: var(--surface, #FFFFFF);
+  color: var(--text, #0F172A);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inline-regen-btn:hover {
+  border-color: var(--primary, #2563EB);
+  color: var(--primary, #2563EB);
+}
+
+.inline-regen-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .chat-error { 
@@ -267,10 +355,25 @@
   color: var(--text-muted, #475569);
 }
 
+.gif-thumb {
+  width: 8vw;
+  min-width: 80px;
+  max-width: 120px;
+  height: 8vw;
+  min-height: 80px;
+  max-height: 120px;
+  border-radius: 0.5rem;
+  object-fit: cover;
+}
+
 .gif-label { 
   font-size: 0.9rem; 
   font-weight: bold; 
   color: var(--primary, #2563EB); 
+}
+
+.placeholder-text {
+  color: var(--text-muted, #475569);
 }
 
 /* 相機展示框比例正常 */
@@ -295,6 +398,12 @@
 .empty-visual { 
   color: var(--text-muted, #475569); 
   text-align: center; 
+}
+
+.gesture-status {
+  font-size: 0.85rem;
+  color: var(--text-muted, #475569);
+  text-align: center;
 }
 
 /* 底部輸入控制 */
@@ -419,6 +528,21 @@ body.dark-mode .history-card:hover {
   border-color: var(--primary, #60A5FA);
 }
 
+body.dark-mode .history-card.active-session {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary, #60A5FA) 22%, transparent);
+}
+
+body.dark-mode .new-session-btn {
+  background: var(--surface, #111827);
+  border-color: var(--border, #1F2937);
+  color: var(--text, #E5E7EB);
+}
+
+body.dark-mode .new-session-btn:hover {
+  border-color: var(--primary, #60A5FA);
+  color: var(--primary, #60A5FA);
+}
+
 body.dark-mode .app-main {
   background: var(--surface, #111827);
 }
@@ -432,6 +556,17 @@ body.dark-mode .main-nav {
 body.dark-mode .chat-bubble.assistant {
   background: var(--bg, #0B1220);
   color: var(--text, #E5E7EB);
+}
+
+body.dark-mode .inline-regen-btn {
+  background: var(--surface, #111827);
+  border-color: var(--border, #1F2937);
+  color: var(--text, #E5E7EB);
+}
+
+body.dark-mode .inline-regen-btn:hover {
+  border-color: var(--primary, #60A5FA);
+  color: var(--primary, #60A5FA);
 }
 
 body.dark-mode .sign-visual-section {
@@ -449,6 +584,10 @@ body.dark-mode .gif-placeholder-img {
 }
 
 body.dark-mode .empty-visual {
+  color: var(--text-muted, #94A3B8);
+}
+
+body.dark-mode .gesture-status {
   color: var(--text-muted, #94A3B8);
 }
 

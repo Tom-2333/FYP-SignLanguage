@@ -39,6 +39,11 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Insert a test user (email: abc@gmail.com, password: 123456)
+-- Password stored as bcrypt hash so PHP `password_verify` works with this entry
+INSERT INTO users (email, username, password_hash) VALUES
+('abc@gmail.com', 'abc', '$2y$10$yqCC0l.aqSfwhiXKgBt8C.PXACaoK9E8SLEyqUMyqPARkkbsQuIi2');
+
 -- Learning progress (e.g., word recognition confidence)
 CREATE TABLE user_progress (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -54,7 +59,7 @@ CREATE TABLE user_progress (
 CREATE TABLE chat_history (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    session_id INT NOT NULL,
+    session_id VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
     role ENUM('user', 'assistant') NOT NULL,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
