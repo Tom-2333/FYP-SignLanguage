@@ -2,8 +2,10 @@
 setlocal
 
 set "ROOT=%~dp0"
+set "VENV=%ROOT%.venv-app310"
+set "PY_EXE=%VENV%\Scripts\python.exe"
+set "PY_BOOTSTRAP="
 set "REQ_FILE=%ROOT%cv_hands\requirements.txt"
-set "PY_MARKER=%ROOT%.python_deps_installed"
 
 echo ========================================
 echo FYP Sign Language - One Click Runner
@@ -23,12 +25,18 @@ if not exist "%REQ_FILE%" (
     exit /b 1
 )
 
-python --version >nul 2>&1
-if errorlevel 1 (
-    echo ERROR: Python not found in PATH.
-    echo Install Python and enable PATH first.
-    pause
-    exit /b 1
+py -3.10 -V >nul 2>&1
+if not errorlevel 1 (
+    set "PY_BOOTSTRAP=py -3.10"
+) else (
+    python --version >nul 2>&1
+    if errorlevel 1 (
+        echo ERROR: Python 3.10 not found.
+        echo Install Python 3.10 and enable PATH or py launcher.
+        pause
+        exit /b 1
+    )
+    set "PY_BOOTSTRAP=python"
 )
 
 where node >nul 2>&1
@@ -38,23 +46,33 @@ if errorlevel 1 (
     exit /b 1
 )
 
-if not exist "%PY_MARKER%" (
+if not exist "%PY_EXE%" (
+    echo Creating virtual environment: %VENV%
+    call %PY_BOOTSTRAP% -m venv "%VENV%"
+    if errorlevel 1 (
+        echo ERROR: Failed to create virtual environment.
+        pause
+        exit /b 1
+    )
+)
+
+if not exist "%VENV%\.deps_installed" (
     echo Installing Python dependencies from cv_hands\requirements.txt...
-    call python -m pip install --upgrade pip
+    call "%PY_EXE%" -m pip install --upgrade pip
     if errorlevel 1 (
         echo ERROR: Failed to upgrade pip.
         pause
         exit /b 1
     )
 
-    call python -m pip install -r "%REQ_FILE%"
+    call "%PY_EXE%" -m pip install -r "%REQ_FILE%"
     if errorlevel 1 (
         echo ERROR: Failed to install Python dependencies.
         pause
         exit /b 1
     )
 
-    type nul > "%PY_MARKER%"
+    type nul > "%VENV%\.deps_installed"
 )
 
 if not exist "%ROOT%node_modules" (
@@ -79,7 +97,7 @@ if not exist "%ROOT%my-app\node_modules" (
 
 echo.
 echo Starting Python backend window...
-start "FYP Python Backend" cmd /k "cd /d ""%ROOT%cv_hands"" && python app_simple.py"
+start "FYP Python Backend" cmd /k "cd /d ""%ROOT%cv_hands"" && ""%PY_EXE%"" app_simple.py"
 
 echo Waiting 4 seconds before starting React...
 timeout /t 4 /nobreak >nul
