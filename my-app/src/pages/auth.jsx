@@ -6,6 +6,7 @@ import './auth.css'
 export default function Auth({ mode = 'login' }) {
   const navigate = useNavigate()
   const { t } = useLanguage()
+  const sldbApiBase = process.env.REACT_APP_SLDB_API_BASE || 'http://localhost/SL-Database_api'
   const [view, setView] = useState(mode) // 'login' or 'register'
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -31,7 +32,7 @@ export default function Auth({ mode = 'login' }) {
 
     setLoading(true)
     try {
-      const response = await fetch('http://localhost/SL-Database_api/login.php', {
+      const response = await fetch(`${sldbApiBase}/login.php`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

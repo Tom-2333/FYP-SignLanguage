@@ -13,6 +13,15 @@ const getConfidence = (wordId) => {
 
 export default function Vocabulary() {
   const apiBase = process.env.REACT_APP_GESTURE_API || 'http://127.0.0.1:5001'
+  const sldbApiBase = process.env.REACT_APP_SLDB_API_BASE || 'http://localhost/SL-Database_api'
+  const normalizeSldbUrl = (path) => {
+    if (!path) return null
+    try {
+      return new URL(path, `${sldbApiBase.replace(/\/$/, '')}/`).href
+    } catch (error) {
+      return path
+    }
+  }
   const { language, setLanguage, t } = useLanguage()
   const videoRef = useRef(null)
 
@@ -185,7 +194,7 @@ export default function Vocabulary() {
     let active = true
     const fetchData = async () => {
       try {
-        const response = await fetch('http://localhost/SL-Database_api/get_words.php')
+        const response = await fetch(`${sldbApiBase}/get_words.php`)
         if (!response.ok) throw new Error('Failed to fetch data')
         const data = await response.json()
         if (active) {
@@ -333,7 +342,7 @@ export default function Vocabulary() {
     let active = true
     const fetchProgress = async () => {
       try {
-        const response = await fetch(`http://localhost/SL-Database_api/get_user_progress.php?user_id=${encodeURIComponent(userId)}`)
+        const response = await fetch(`${sldbApiBase}/get_user_progress.php?user_id=${encodeURIComponent(userId)}`)
         if (!response.ok) throw new Error('Failed to fetch user progress')
         const data = await response.json()
         if (!active) return
@@ -350,7 +359,7 @@ export default function Vocabulary() {
     return () => {
       active = false
     }
-  }, [userId])
+  }, [userId, sldbApiBase])
 
   // Check for word match and save progress
   useEffect(() => {
@@ -359,7 +368,7 @@ export default function Vocabulary() {
       console.log('Match found, saving progress')
       setIsCompleted(true)
       // Save to database
-      fetch('http://localhost/SL-Database_api/save_progress.php', {
+      fetch(`${sldbApiBase}/save_progress.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -392,7 +401,7 @@ export default function Vocabulary() {
           console.error('Save progress error:', err)
         })
     }
-  }, [isMatch, isCompleted, userId, selectedWord, gestureData])
+  }, [isMatch, isCompleted, userId, selectedWord, gestureData, sldbApiBase])
 
   // Reset completion when word changes
   useEffect(() => {
@@ -726,7 +735,7 @@ export default function Vocabulary() {
                 <div className="gif-area">
                   {selectedWord ? (
                     <img
-                      src={`http://localhost/SL-Database_api/video-webp/${selectedWord.id.padStart(8, '0')}.webp`}
+                      src={normalizeSldbUrl(`video-webp/${selectedWord.id.padStart(8, '0')}.webp`)}
                       alt={language === 'en' ? (selectedWord.engword || selectedWord.word) : selectedWord.word}
                       className="sign-video"
                       onError={(e) => {

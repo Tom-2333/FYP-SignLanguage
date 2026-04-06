@@ -28,7 +28,8 @@ foreach ($words as $w) {
     if ($row = $res->fetch_assoc()) {
         $id = intval($row['id']);
         $filename = sprintf('%08d.webp', $id);
-        $url = sprintf('http://localhost/FYP-SignLanguage-poe_conn/FYP-SignLanguage-poe_conn/SL-Database_api/video-webp/%s', $filename);
+        $basePath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+        $url = $basePath . '/video-webp/' . $filename;
         $mapping[$w_trim] = $url;
     } else {
         // no mapping found
