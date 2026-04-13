@@ -14,9 +14,10 @@ if (!$user_id) {
     exit;
 }
 
-// For each session_id, get last message and timestamp and count
+// For each session_id, get first message + last message and timestamp and count
 $sql = "SELECT session_id, COUNT(*) as message_count, MAX(timestamp) as last_ts,
-           SUBSTRING_INDEX(GROUP_CONCAT(message ORDER BY timestamp DESC SEPARATOR '||'), '||', 1) as last_message
+              SUBSTRING_INDEX(GROUP_CONCAT(message ORDER BY timestamp DESC SEPARATOR '||'), '||', 1) as last_message,
+              SUBSTRING_INDEX(GROUP_CONCAT(message ORDER BY timestamp ASC SEPARATOR '||'), '||', 1) as first_message
         FROM chat_history
         WHERE user_id = ?
         GROUP BY session_id
@@ -37,6 +38,7 @@ while ($r = $res->fetch_assoc()) {
         'session_id' => $r['session_id'],
         'message_count' => intval($r['message_count']),
         'last_message' => $r['last_message'],
+        'first_message' => $r['first_message'],
         'last_timestamp' => $r['last_ts']
     ];
 }

@@ -1,19 +1,30 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import './support.css'
 import { FaPhone, FaMapMarkerAlt, FaEnvelope, FaExternalLinkAlt, FaInfoCircle, FaHandsHelping, FaExclamationTriangle, FaHeartbeat } from 'react-icons/fa'
 import { useLanguage } from '../contexts/LanguageContext'
 
 export default function Support() {
   const { language, setLanguage, t } = useLanguage()
+  const [colorMode, setColorMode] = useState(() => localStorage.getItem('colorMode') || 'light')
+  const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || '100%')
 
-  useEffect(() => {
-    // Apply color mode from localStorage
-    const savedColorMode = localStorage.getItem('colorMode') || 'light'
-    if (savedColorMode === 'dark') {
+  const applyColorMode = (mode) => {
+    if (mode === 'dark') {
       document.body.classList.add('dark-mode')
     } else {
       document.body.classList.remove('dark-mode')
     }
+  }
+
+  useEffect(() => {
+    // Apply color mode from localStorage
+    const savedColorMode = localStorage.getItem('colorMode') || 'light'
+    setColorMode(savedColorMode)
+    applyColorMode(savedColorMode)
+
+    // Load font size preference
+    const savedFontSize = localStorage.getItem('fontSize') || '100%'
+    setFontSize(savedFontSize)
 
     // Apply RG-CVD mode
     const savedRgCvdMode = localStorage.getItem('rgCvdMode') === 'true'
@@ -24,28 +35,79 @@ export default function Support() {
     }
   }, [])
 
+  const handleColorModeToggle = () => {
+    const nextMode = colorMode === 'light' ? 'dark' : 'light'
+    setColorMode(nextMode)
+    localStorage.setItem('colorMode', nextMode)
+    applyColorMode(nextMode)
+  }
+
+  const handleFontSizeChange = (size) => {
+    setFontSize(size)
+    localStorage.setItem('fontSize', size)
+  }
+
   return (
-    <div className="support-page-root">
+    <div className={`support-page-root ${fontSize === '90%' ? 'font-size-90' : fontSize === '125%' ? 'font-size-125' : 'font-size-100'}`}>
       <div className="support-page">
         <div className="support-header">
           <div className="support-header-top">
             <h1>{t('support.title')}</h1>
-            <div className="support-language-toggle" role="group" aria-label="Language selector">
-              <span className="support-language-icon" aria-hidden>🌐</span>
+            <div className="header-controls">
+              <div className="support-language-toggle" role="group" aria-label="Language selector">
+                <span className="support-language-icon" aria-hidden>🌐</span>
+                <button
+                  type="button"
+                  className={`support-language-btn ${language === 'zh' ? 'active' : ''}`}
+                  onClick={() => setLanguage('zh')}
+                >
+                  粵
+                </button>
+                <span className="support-language-divider">|</span>
+                <button
+                  type="button"
+                  className={`support-language-btn ${language === 'en' ? 'active' : ''}`}
+                  onClick={() => setLanguage('en')}
+                >
+                  Eng
+                </button>
+              </div>
+
+              <div className="font-size-controls">
+                <button
+                  type="button"
+                  className={`font-size-btn size-small ${fontSize === '90%' ? 'active' : ''}`}
+                  onClick={() => handleFontSizeChange('90%')}
+                  title="Small (90%)"
+                >
+                  aa
+                </button>
+                <button
+                  type="button"
+                  className={`font-size-btn size-normal ${fontSize === '100%' ? 'active' : ''}`}
+                  onClick={() => handleFontSizeChange('100%')}
+                  title="Normal (100%)"
+                >
+                  Aa
+                </button>
+                <button
+                  type="button"
+                  className={`font-size-btn size-large ${fontSize === '125%' ? 'active' : ''}`}
+                  onClick={() => handleFontSizeChange('125%')}
+                  title="Large (125%)"
+                >
+                  AA
+                </button>
+              </div>
+
               <button
                 type="button"
-                className={`support-language-btn ${language === 'zh' ? 'active' : ''}`}
-                onClick={() => setLanguage('zh')}
+                className="theme-toggle"
+                onClick={handleColorModeToggle}
+                aria-label={colorMode === 'light' ? t('vocab.switchDarkMode') : t('vocab.switchLightMode')}
+                title={colorMode === 'light' ? t('vocab.darkMode') : t('vocab.lightMode')}
               >
-                粵
-              </button>
-              <span className="support-language-divider">|</span>
-              <button
-                type="button"
-                className={`support-language-btn ${language === 'en' ? 'active' : ''}`}
-                onClick={() => setLanguage('en')}
-              >
-                Eng
+                {colorMode === 'light' ? '🌙' : '☀️'}
               </button>
             </div>
           </div>

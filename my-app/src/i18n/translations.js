@@ -114,7 +114,7 @@ export const translations = {
     chat: {
       title: 'GPT-手語助理',
       searchHistory: '搜尋歷史...',
-      conversionHistory: '轉換歷史',
+      conversionHistory: '歷史紀錄',
       waiting: '等待中...',
       inputPlaceholder: '請在此輸入文字...',
       cameraMode: '相機模式辨識中...',
@@ -292,7 +292,7 @@ export const translations = {
     chat: {
       title: 'GPT-Sign-Language Assistant',
       searchHistory: 'Search history...',
-      conversionHistory: 'Conversion History',
+      conversionHistory: 'History Record',
       waiting: 'Waiting...',
       inputPlaceholder: 'Type text here...',
       cameraMode: 'Camera mode recognizing...',
