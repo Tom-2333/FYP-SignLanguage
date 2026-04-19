@@ -1,0 +1,6 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <rect width="1200" height="675" fill="#f1f5f9"/>
+  <rect x="24" y="24" width="1152" height="627" rx="16" fill="#e2e8f0" stroke="#94a3b8"/>
+  <text x="600" y="320" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" fill="#334155">請將對應截圖放到 docs/figures 目錄</text>
+  <text x="600" y="370" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" fill="#475569">Replace this placeholder with your screenshot</text>
+</svg>
