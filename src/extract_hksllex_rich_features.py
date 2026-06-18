@@ -1,6 +1,6 @@
 """
-Extract MediaPipe Holistic 225‑dim features from HKSL‑LEX videos,
-generate gloss‑to‑ID mapping, and produce the manifest expected by dataset.py.
+Extract MediaPipe Holistic 225-dim features from HKSL-LEX videos,
+generate gloss-to-ID mapping, and produce the manifest expected by dataset.py.
 
 Usage:
     python src/extract_hksllex_rich_features.py \
@@ -72,7 +72,7 @@ def _extract_frames_from_webp(video_path: str, max_frames: int = 1000) -> List[n
 
 
 # ------------------------------------------------------------------------------
-# 225‑dim landmark extraction (gold standard)
+# 225-dim landmark extraction (gold standard)
 # ------------------------------------------------------------------------------
 
 # Indices for the 11 pose joints (MediaPipe Pose landmark indices)
@@ -136,7 +136,7 @@ def _extract_landmarks(frame: np.ndarray, holistic) -> Optional[Tuple[np.ndarray
 
 
 def _frame_to_feature(frame: np.ndarray, holistic) -> Optional[np.ndarray]:
-    """Convert one RGB frame to a 225‑dim feature vector."""
+    """Convert one RGB frame to a 225-dim feature vector."""
     landmarks = _extract_landmarks(frame, holistic)
     if landmarks is None:
         return None
@@ -240,7 +240,7 @@ def _process_video(
     # The dataset.py expects a list of ints; we'll treat it as a single token.
     target_id = gloss_to_id.get(en_gloss)
     if target_id is None:
-        # This should not happen if we pre‑built the mapping.
+        # This should not happen if we pre-built the mapping.
         target_id = 0  # fallback blank? Better to skip.
         warnings.warn(f"Gloss '{en_gloss}' not in mapping, skipping.")
         return None
