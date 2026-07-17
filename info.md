@@ -7,6 +7,13 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 # 安裝必要套件（複製整行）
 pip install opencv-python mediapipe numpy torch pillow onnxruntime-directml
 
+# training AI
+
+pip uninstall torch torchvision torchaudio -y
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+
+python -c "import torch; print(torch.cuda.is_available())"
+
 # 執行即時手語辨識
 python live_recognition.py
 
