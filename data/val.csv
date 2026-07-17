@@ -1,0 +1,359 @@
+path,target,input_lengths,english_gloss,chinese_gloss,cantonese_gloss
+data\features\HKSLLEX-2023-00003295.pt,158,134,Sunny Bay,欣澳,
+data\features\HKSLLEX-2023-00003009.pt,2296,134,square idiot,白癡,白癡
+data\features\HKSLLEX-2023-00002869.pt,843,173,doesnt matter,不要緊,唔緊要
+data\features\HKSLLEX-2023-00001743.pt,1300,163,hop,蹦蹦跳,蹦蹦跳
+data\features\HKSLLEX-2023-00001171.pt,1832,125,piano,鋼琴,鋼琴
+data\features\HKSLLEX-2023-00001877.pt,1512,182,living room,客廳,客廳
+data\features\HKSLLEX-2023-00003304.pt,177,125,Tseung Kwan O,將軍澳,
+data\features\HKSLLEX-2023-00003299.pt,120,125,Po Lam,寶琳,
+data\features\HKSLLEX-2023-00001086.pt,359,154,bathroom,浴室,浴室
+data\features\HKSLLEX-2023-00001601.pt,466,134,brainwash,洗腦,洗腦
+data\features\HKSLLEX-2023-00000009.pt,2255,90,some,一些,一啲
+data\features\HKSLLEX-2023-00001555.pt,594,134,china,中國,中國
+data\features\HKSLLEX-2023-00000676.pt,245,73,ahead of time,提早,提早
+data\features\HKSLLEX-2023-00000241.pt,708,73,cousin,表哥,表哥
+data\features\HKSLLEX-2023-00001646.pt,1789,163,passport,護照,護照
+data\features\HKSLLEX-2023-00000875.pt,2295,72,square,方,方
+data\features\HKSLLEX-2023-00001985.pt,1499,154,like,喜歡,鍾意
+data\features\HKSLLEX-2023-00002002.pt,1741,182,or,或者,或者
+data\features\HKSLLEX-2023-00001675.pt,1687,144,noise,噪音,噪音
+data\features\HKSLLEX-2023-00000684.pt,1169,46,good at,精於,精於
+data\features\HKSLLEX-2023-00000969.pt,336,78,balance,平衡,平衡
+data\features\HKSLLEX-2023-00003107.pt,824,115,disappointed,失落,失落
+data\features\HKSLLEX-2023-00000383.pt,764,56,deep,深,深
+data\features\HKSLLEX-2023-00000061.pt,2275,77,speakers,喇叭,喇叭
+data\features\HKSLLEX-2023-00002225.pt,1639,163,mummy,木乃伊,木乃伊
+data\features\HKSLLEX-2023-00002688.pt,1804,134,peck,啄,啄
+data\features\HKSLLEX-2023-00000210.pt,268,72,and,並且,同埋
+data\features\HKSLLEX-2023-00000400.pt,1742,73,oral,口語,口語
+data\features\HKSLLEX-2023-00002269.pt,447,144,bother,打擾,打擾
+data\features\HKSLLEX-2023-00001827.pt,1586,154,melt,融化,融化
+data\features\HKSLLEX-2023-00000306.pt,282,79,appointment,預約,預約
+data\features\HKSLLEX-2023-00001025.pt,484,144,brush,梳頭,梳頭
+data\features\HKSLLEX-2023-00001909.pt,1860,134,plate,碟,碟
+data\features\HKSLLEX-2023-00003377.pt,187,134,Tuen Mun,屯門,
+data\features\HKSLLEX-2023-00000752.pt,892,87,duck,鴨,鴨
+data\features\HKSLLEX-2023-00003685.pt,113,115,Palace Museum,故宮博物館,
+data\features\HKSLLEX-2023-00000575.pt,430,72,boat,船,船
+data\features\HKSLLEX-2023-00001848.pt,464,182,braille,盲文凸字,盲文凸字
+data\features\HKSLLEX-2023-00003639.pt,89,115,Luen Wo Hui,聯和墟,
+data\features\HKSLLEX-2023-00003362.pt,101,134,Nam Cheong,南昌,
+data\features\HKSLLEX-2023-00000784.pt,2515,88,tolerant,忍讓,忍讓
+data\features\HKSLLEX-2023-00001019.pt,1452,125,language,語言,語言
+data\features\HKSLLEX-2023-00000446.pt,2108,80,school,學校,學校
+data\features\HKSLLEX-2023-00001392.pt,822,173,disappear,消失,消失
+data\features\HKSLLEX-2023-00002999.pt,1830,144,photography,攝影,攝影
+data\features\HKSLLEX-2023-00001652.pt,2133,154,send,發送,發送
+data\features\HKSLLEX-2023-00000250.pt,222,59,action,動作,動作
+data\features\HKSLLEX-2023-00000404.pt,525,79,canada,加拿大,加拿大
+data\features\HKSLLEX-2023-00002665.pt,2591,154,universe,宇宙,宇宙
+data\features\HKSLLEX-2023-00002693.pt,2360,154,stretch,伸展,伸展
+data\features\HKSLLEX-2023-00002775.pt,2203,202,sink,下沉,下沉
+data\features\HKSLLEX-2023-00000222.pt,2015,70,research,研究,研究
+data\features\HKSLLEX-2023-00003596.pt,148,96,Siu Sai Wan,小西灣,
+data\features\HKSLLEX-2023-00001926.pt,1284,134,hold,揸住,揸住
+data\features\HKSLLEX-2023-00001693.pt,563,163,chain,鏈,鏈
+data\features\HKSLLEX-2023-00001742.pt,2050,202,rocking chair,搖椅,搖椅
+data\features\HKSLLEX-2023-00001454.pt,2409,154,sweep,掃地,掃地
+data\features\HKSLLEX-2023-00001777.pt,1855,144,plain,平淡,平淡
+data\features\HKSLLEX-2023-00002716.pt,1163,163,god,神,神
+data\features\HKSLLEX-2023-00000399.pt,570,68,channel,頻道,頻道
+data\features\HKSLLEX-2023-00000387.pt,1361,76,indian,印度,印度
+data\features\HKSLLEX-2023-00000780.pt,682,72,confused,糊塗,糊塗
+data\features\HKSLLEX-2023-00001677.pt,279,144,apart,分開,分開
+data\features\HKSLLEX-2023-00001949.pt,497,182,burp,打嗝,打嗝
+data\features\HKSLLEX-2023-00003300.pt,45,134,Hang Hau,坑口,
+data\features\HKSLLEX-2023-00000995.pt,2172,125,shorts,短褲,短褲
+data\features\HKSLLEX-2023-00001952.pt,1730,144,one,一,一
+data\features\HKSLLEX-2023-00002377.pt,1765,134,pageantry,選美比賽,選美比賽
+data\features\HKSLLEX-2023-00002356.pt,1259,134,heartbody,心臟,心臟
+data\features\HKSLLEX-2023-00002979.pt,1805,144,peel,剝,剝
+data\features\HKSLLEX-2023-00000542.pt,1065,76,flower,花,花
+data\features\HKSLLEX-2023-00003426.pt,1343,106,imitation shark fin soup,碗仔翅,
+data\features\HKSLLEX-2023-00000878.pt,2352,67,straight,直,直
+data\features\HKSLLEX-2023-00002004.pt,526,163,cancel,取消,取消
+data\features\HKSLLEX-2023-00002755.pt,1017,211,fed up,受夠,頂唔順
+data\features\HKSLLEX-2023-00001140.pt,647,144,coconut,椰子,椰子
+data\features\HKSLLEX-2023-00000973.pt,736,182,cup,杯,杯
+data\features\HKSLLEX-2023-00002120.pt,971,125,example,例子,例子
+data\features\HKSLLEX-2023-00003386.pt,151,144,South Horizons,海怡半島,
+data\features\HKSLLEX-2023-00001356.pt,2680,202,well,,噉囉
+data\features\HKSLLEX-2023-00000132.pt,761,61,decide,決定,決定
+data\features\HKSLLEX-2023-00000277.pt,867,84,downsize,減少,減少
+data\features\HKSLLEX-2023-00000937.pt,1307,72,hospitalize,送院,送院
+data\features\HKSLLEX-2023-00000243.pt,708,73,cousin,表姐,表姐
+data\features\HKSLLEX-2023-00002601.pt,2113,144,scoop,舀,𢳂
+data\features\HKSLLEX-2023-00002916.pt,2665,144,we,我們,我哋
+data\features\HKSLLEX-2023-00000293.pt,1980,74,reason,原因,原因
+data\features\HKSLLEX-2023-00000030.pt,1470,94,learn,學習,學習
+data\features\HKSLLEX-2023-00003669.pt,39,115,Flower Market,花墟,
+data\features\HKSLLEX-2023-00002427.pt,2583,125,unaware,沒有留意,冇留意
+data\features\HKSLLEX-2023-00000943.pt,428,77,blushing,面紅,面紅
+data\features\HKSLLEX-2023-00002284.pt,1995,134,refuse,拒絕,拒絕
+data\features\HKSLLEX-2023-00002428.pt,1374,125,instagram,Instagram,Instagram
+data\features\HKSLLEX-2023-00000087.pt,1103,68,friday,星期五,星期五
+data\features\HKSLLEX-2023-00001387.pt,1866,144,pliers,鉗,鉗
+data\features\HKSLLEX-2023-00000263.pt,1114,80,front,前面,前面
+data\features\HKSLLEX-2023-00000920.pt,1252,78,healthy and strong,壯健,壯健
+data\features\HKSLLEX-2023-00001015.pt,2358,134,street,街道,街道
+data\features\HKSLLEX-2023-00000495.pt,751,80,date,日期,日期
+data\features\HKSLLEX-2023-00001860.pt,1223,163,hall,禮堂,禮堂
+data\features\HKSLLEX-2023-00002133.pt,1268,115,hen,母雞,母雞
+data\features\HKSLLEX-2023-00001808.pt,1145,134,give,俾,俾
+data\features\HKSLLEX-2023-00001530.pt,2332,154,stethoscope,聽診器,聽診器
+data\features\HKSLLEX-2023-00003674.pt,38,96,Festival Walk,又一城,
+data\features\HKSLLEX-2023-00002764.pt,1287,230,hold together,團結一致,團結一致
+data\features\HKSLLEX-2023-00001637.pt,1628,154,most,最,最
+data\features\HKSLLEX-2023-00001277.pt,867,182,downsize,縮小,縮小
+data\features\HKSLLEX-2023-00002936.pt,1172,154,goosebumps,雞皮疙瘩,起雞皮
+data\features\HKSLLEX-2023-00000824.pt,2679,70,welfare,福利,福利
+data\features\HKSLLEX-2023-00002842.pt,1897,134,pour,斟,斟
+data\features\HKSLLEX-2023-00003004.pt,474,163,breaktime,休息時間,休息時間
+data\features\HKSLLEX-2023-00003117.pt,1688,106,nonchalant,拼了,死過
+data\features\HKSLLEX-2023-00002223.pt,1696,125,nose,鼻,鼻
+data\features\HKSLLEX-2023-00000868.pt,895,81,dusk,黃昏,黃昏
+data\features\HKSLLEX-2023-00001744.pt,2117,134,scream,尖叫,尖叫
+data\features\HKSLLEX-2023-00002501.pt,1479,134,lend,借,借
+data\features\HKSLLEX-2023-00002178.pt,2291,125,spread,傳播,傳播
+data\features\HKSLLEX-2023-00001088.pt,2451,125,telephone,電話,電話
+data\features\HKSLLEX-2023-00000675.pt,2017,77,reserve a court,訂場,訂場
+data\features\HKSLLEX-2023-00002266.pt,558,134,cemetery,公墓,公墓
+data\features\HKSLLEX-2023-00001960.pt,343,192,bandage,繃帶,繃帶
+data\features\HKSLLEX-2023-00002718.pt,1400,173,italy,義大利,義大利
+data\features\HKSLLEX-2023-00000527.pt,1332,72,iceskating,溜冰,溜冰
+data\features\HKSLLEX-2023-00000515.pt,872,78,draw,繪畫,繪畫
+data\features\HKSLLEX-2023-00003224.pt,198,154,Whampoa,黃埔,
+data\features\HKSLLEX-2023-00002196.pt,1414,134,join,加入,加入
+data\features\HKSLLEX-2023-00003203.pt,30,163,Diamond Hill,鑽石山,
+data\features\HKSLLEX-2023-00000284.pt,673,75,complex,複雜,複雜
+data\features\HKSLLEX-2023-00003440.pt,1557,134,maltose cracker,麥芽糖夾餅,
+data\features\HKSLLEX-2023-00002003.pt,642,202,clueless,一無所知,一無所知
+data\features\HKSLLEX-2023-00003014.pt,1479,154,lend,借,借
+data\features\HKSLLEX-2023-00000352.pt,981,68,explanation,解釋,解釋
+data\features\HKSLLEX-2023-00003632.pt,180,134,Tsing Lung Tau,青龍頭,
+data\features\HKSLLEX-2023-00003544.pt,378,96,beef stomach,牛栢葉,
+data\features\HKSLLEX-2023-00000987.pt,2163,125,shirt,襯衫,恤衫
+data\features\HKSLLEX-2023-00000238.pt,2580,77,ugly,醜,樣衰
+data\features\HKSLLEX-2023-00000981.pt,1776,173,parachute,降落傘,降落傘
+data\features\HKSLLEX-2023-00001262.pt,2239,125,snob,勢利眼,沙塵
+data\features\HKSLLEX-2023-00003403.pt,2345,125,stir-fried rice vermicelli noodles,炒米粉,
+data\features\HKSLLEX-2023-00001489.pt,1676,154,newspaper,報紙,報紙
+data\features\HKSLLEX-2023-00000459.pt,436,73,bold,臉皮厚.,臉皮厚
+data\features\HKSLLEX-2023-00000080.pt,1629,80,mother,媽媽,媽咪
+data\features\HKSLLEX-2023-00002015.pt,637,182,closet,衣櫃,衣櫃
+data\features\HKSLLEX-2023-00001331.pt,456,125,box,盒,盒
+data\features\HKSLLEX-2023-00002470.pt,2027,144,result,結果,結果
+data\features\HKSLLEX-2023-00000007.pt,2022,72,responsibility,責任,責任
+data\features\HKSLLEX-2023-00002188.pt,1084,115,form,表格,表格
+data\features\HKSLLEX-2023-00003277.pt,131,163,Sai Ying Pun,西營盤,
+data\features\HKSLLEX-2023-00002224.pt,1715,144,ocean,海洋,海洋
+data\features\HKSLLEX-2023-00000662.pt,2258,65,sometimes,間中,間中
+data\features\HKSLLEX-2023-00003211.pt,141,144,Shek Kip Mei,石硤尾,
+data\features\HKSLLEX-2023-00001533.pt,948,144,enjoy,享受,享受
+data\features\HKSLLEX-2023-00003512.pt,607,115,chrysanthemum tea,菊花茶,
+data\features\HKSLLEX-2023-00003676.pt,14,96,Castle Peak,青山(醫院，不是道),
+data\features\HKSLLEX-2023-00002513.pt,1938,182,proximalization,搲,搲
+data\features\HKSLLEX-2023-00003474.pt,1869,144,plum maltose,話梅麥芽糖,
+data\features\HKSLLEX-2023-00002634.pt,298,154,assembly,集會,集會
+data\features\HKSLLEX-2023-00001222.pt,1594,163,microscope,顯微鏡,顯微鏡
+data\features\HKSLLEX-2023-00002578.pt,2010,154,replace,代替,代替
+data\features\HKSLLEX-2023-00000436.pt,2125,76,secret,秘密,秘密
+data\features\HKSLLEX-2023-00002093.pt,2424,134,take,拿,拎
+data\features\HKSLLEX-2023-00000734.pt,2090,63,sandwich,三明治,三文治
+data\features\HKSLLEX-2023-00003208.pt,86,144,Lok Fu,樂富,
+data\features\HKSLLEX-2023-00002061.pt,2483,192,thought disappear,想不起,醒唔起
+data\features\HKSLLEX-2023-00001079.pt,1073,134,football,足球,足球
+data\features\HKSLLEX-2023-00002964.pt,1231,154,hands off,袖手旁觀,袖手旁觀
+data\features\HKSLLEX-2023-00002973.pt,1908,125,press,㩒,㩒
+data\features\HKSLLEX-2023-00000016.pt,1292,82,honest,老實,老實
+data\features\HKSLLEX-2023-00001871.pt,720,144,cream,忌廉,忌廉
+data\features\HKSLLEX-2023-00000648.pt,624,88,cleaner,清潔,清潔
+data\features\HKSLLEX-2023-00001793.pt,2735,154,wow,嘩,嘩
+data\features\HKSLLEX-2023-00001205.pt,2041,125,ring,戒指,戒指
+data\features\HKSLLEX-2023-00003699.pt,112,106,Outlying island,離島,
+data\features\HKSLLEX-2023-00003660.pt,149,106,So Uk,蘇屋,
+data\features\HKSLLEX-2023-00002642.pt,1395,154,iphone,iPhone,iPhone
+data\features\HKSLLEX-2023-00003236.pt,138,144,Sham Shui Po,深水埗,
+data\features\HKSLLEX-2023-00001093.pt,1241,125,hat,帽子,帽
+data\features\HKSLLEX-2023-00003093.pt,1087,144,foul,犯規,犯規
+data\features\HKSLLEX-2023-00002214.pt,2528,134,touch,觸碰,觸碰
+data\features\HKSLLEX-2023-00002809.pt,1232,163,handsome,帥,靚仔
+data\features\HKSLLEX-2023-00000471.pt,2023,68,rest,休息,休息
+data\features\HKSLLEX-2023-00002969.pt,1259,154,heartbody,心臟,心臟
+data\features\HKSLLEX-2023-00002803.pt,1855,134,plain,平淡,平淡
+data\features\HKSLLEX-2023-00000048.pt,2,84,5 dollars,五蚊,五蚊
+data\features\HKSLLEX-2023-00002283.pt,2114,125,score,分數,分數
+data\features\HKSLLEX-2023-00001031.pt,796,144,devil,魔鬼,魔鬼
+data\features\HKSLLEX-2023-00002182.pt,1219,144,hairdresser,理髮師,理髮師
+data\features\HKSLLEX-2023-00001930.pt,2475,182,think connect,心靈相通,心靈相通
+data\features\HKSLLEX-2023-00002457.pt,772,163,degree,學位,學位
+data\features\HKSLLEX-2023-00001564.pt,2522,144,toothbrush,牙刷,牙刷
+data\features\HKSLLEX-2023-00001579.pt,1635,144,move,移動,移動
+data\features\HKSLLEX-2023-00000260.pt,1237,80,hard,硬,硬
+data\features\HKSLLEX-2023-00002459.pt,1559,154,manage,管理,管理
+data\features\HKSLLEX-2023-00001740.pt,2717,144,winter,冬天,冬天
+data\features\HKSLLEX-2023-00002804.pt,1855,134,plain,平淡,平淡
+data\features\HKSLLEX-2023-00003334.pt,54,115,Hung Hom,紅磡,
+data\features\HKSLLEX-2023-00000657.pt,344,54,bank,銀行,銀行
+data\features\HKSLLEX-2023-00002587.pt,252,182,all gone,全部沒有了,全部冇晒
+data\features\HKSLLEX-2023-00000627.pt,1381,72,interact,交流,交流
+data\features\HKSLLEX-2023-00000449.pt,1390,78,introduction,介紹,介紹
+data\features\HKSLLEX-2023-00000193.pt,1074,68,for,為了,為咗
+data\features\HKSLLEX-2023-00003119.pt,636,115,close shave,好險,好險
+data\features\HKSLLEX-2023-00000373.pt,216,68,accomplish,成功,成功
+data\features\HKSLLEX-2023-00002034.pt,2436,163,tape,膠紙,膠紙
+data\features\HKSLLEX-2023-00002102.pt,1786,134,pass out,昏迷,昏迷
+data\features\HKSLLEX-2023-00000567.pt,1604,68,minibus,小巴,小巴
+data\features\HKSLLEX-2023-00000897.pt,2289,100,sports ground,運動場,運動場
+data\features\HKSLLEX-2023-00001485.pt,2317,115,steak,牛扒,牛扒
+data\features\HKSLLEX-2023-00001639.pt,2642,115,wall,牆,牆
+data\features\HKSLLEX-2023-00002405.pt,1686,154,no big deal,沒甚麼大不了,冇咩大不了
+data\features\HKSLLEX-2023-00001763.pt,1205,182,guide,帶領,帶領
+data\features\HKSLLEX-2023-00002410.pt,1627,125,mosquito,蚊子,蚊子
+data\features\HKSLLEX-2023-00003075.pt,2422,182,tablet,平板電腦,平板電腦
+data\features\HKSLLEX-2023-00001078.pt,1073,144,football,足球,足球
+data\features\HKSLLEX-2023-00002220.pt,1690,134,nonsense,一派胡言,一派胡言
+data\features\HKSLLEX-2023-00002316.pt,1353,144,improve,改善,改善
+data\features\HKSLLEX-2023-00003069.pt,1242,154,hatbrim,帽檐,帽檐
+data\features\HKSLLEX-2023-00001010.pt,2241,144,snow,雪,雪
+data\features\HKSLLEX-2023-00003693.pt,63,106,Kowloon Peak,飛鵝山,
+data\features\HKSLLEX-2023-00001085.pt,359,134,bathroom,浴室,浴室
+data\features\HKSLLEX-2023-00000587.pt,1358,64,increase,增加,增加
+data\features\HKSLLEX-2023-00001890.pt,1351,182,impress,留下深刻印象,留下深刻印象
+data\features\HKSLLEX-2023-00002650.pt,423,182,blow candle,吹蠟燭,吹蠟燭
+data\features\HKSLLEX-2023-00001625.pt,1061,115,flip switch,撻掣,撻掣
+data\features\HKSLLEX-2023-00002058.pt,628,154,click,㩒一下,㩒一下
+data\features\HKSLLEX-2023-00002702.pt,463,154,braids,辮,辮
+data\features\HKSLLEX-2023-00000872.pt,590,60,childhood,小時候,小時候
+data\features\HKSLLEX-2023-00001290.pt,2209,173,skate,溜冰,溜冰
+data\features\HKSLLEX-2023-00002957.pt,1455,154,last week,上個星期,上個星期
+data\features\HKSLLEX-2023-00002340.pt,2449,134,teenager,青少年,青少年
+data\features\HKSLLEX-2023-00000866.pt,1079,58,forever,永遠,永遠
+data\features\HKSLLEX-2023-00000272.pt,1013,72,fault,過錯,過錯
+data\features\HKSLLEX-2023-00001097.pt,2510,125,tobacco,煙草,煙草
+data\features\HKSLLEX-2023-00001647.pt,1287,163,hold together,團結一致,團結一致
+data\features\HKSLLEX-2023-00001295.pt,2318,173,steal,偷,偷
+data\features\HKSLLEX-2023-00003399.pt,1857,106,plain rice congee,白粥,
+data\features\HKSLLEX-2023-00000130.pt,210,80,about,關於,關於
+data\features\HKSLLEX-2023-00003465.pt,721,134,cream bun,忌廉包,
+data\features\HKSLLEX-2023-00000939.pt,528,60,cancer,癌,癌
+data\features\HKSLLEX-2023-00000229.pt,891,67,dryer,乾衣機,乾衣機
+data\features\HKSLLEX-2023-00003266.pt,172,154,Tin Hau,天后,
+data\features\HKSLLEX-2023-00003235.pt,21,144,Cheung Sha Wan,長沙灣,
+data\features\HKSLLEX-2023-00003552.pt,2075,106,sago in coconut milk,西米露,
+data\features\HKSLLEX-2023-00001330.pt,442,173,boots,靴子,靴
+data\features\HKSLLEX-2023-00002821.pt,2429,144,take pill,食藥,食藥
+data\features\HKSLLEX-2023-00000901.pt,1877,85,police station,警署,警署
+data\features\HKSLLEX-2023-00002296.pt,1675,163,news to me,第一次聽,第一次聽
+data\features\HKSLLEX-2023-00002836.pt,393,163,bet,打賭,打賭
+data\features\HKSLLEX-2023-00002638.pt,1030,154,file,文件夾,文件夾
+data\features\HKSLLEX-2023-00001106.pt,2165,125,shoes,鞋,鞋
+data\features\HKSLLEX-2023-00001557.pt,368,134,bear,熊,熊
+data\features\HKSLLEX-2023-00001907.pt,1279,144,his,他的,佢嘅
+data\features\HKSLLEX-2023-00000670.pt,1367,60,initially,最初,最初
+data\features\HKSLLEX-2023-00001002.pt,2215,154,skirt,短裙,短裙
+data\features\HKSLLEX-2023-00003005.pt,1087,134,foul,淘汰,淘汰
+data\features\HKSLLEX-2023-00002203.pt,363,144,beak,鳥喙,鳥喙
+data\features\HKSLLEX-2023-00000704.pt,2109,59,science,科學,科學
+data\features\HKSLLEX-2023-00002618.pt,2308,144,stand up,站起來,企起身
+data\features\HKSLLEX-2023-00002512.pt,429,202,board,董事會,董事會
+data\features\HKSLLEX-2023-00000292.pt,675,77,computer mouse,滑鼠,滑鼠
+data\features\HKSLLEX-2023-00002672.pt,2500,134,timeout,夠鐘,夠鐘
+data\features\HKSLLEX-2023-00002816.pt,2571,144,twins,雙胞胎,雙胞胎
+data\features\HKSLLEX-2023-00002892.pt,1889,154,porcupine,箭豬,箭豬
+data\features\HKSLLEX-2023-00001094.pt,2696,125,whistle,哨子,哨子
+data\features\HKSLLEX-2023-00002762.pt,1789,182,passport,護照,護照
+data\features\HKSLLEX-2023-00000860.pt,2648,60,want,想,想
+data\features\HKSLLEX-2023-00001456.pt,1760,173,owl,貓頭鷹,貓頭鷹
+data\features\HKSLLEX-2023-00001518.pt,1368,125,inject,注射,注射
+data\features\HKSLLEX-2023-00000669.pt,1858,60,plan,安排,安排
+data\features\HKSLLEX-2023-00001497.pt,1163,134,god,神,神
+data\features\HKSLLEX-2023-00003514.pt,1267,115,hemp seed drink,火麻仁,
+data\features\HKSLLEX-2023-00002620.pt,666,163,committee,委員會,委員會
+data\features\HKSLLEX-2023-00001870.pt,1272,173,high heels,高跟鞋,高踭鞋
+data\features\HKSLLEX-2023-00003658.pt,106,106,Ngong Ping,昂平,
+data\features\HKSLLEX-2023-00003653.pt,170,106,Tap Mun,塔門,
+data\features\HKSLLEX-2023-00000414.pt,866,74,download,下載,下載
+data\features\HKSLLEX-2023-00000952.pt,1542,80,lustful,好色,好色
+data\features\HKSLLEX-2023-00000327.pt,1255,63,hearing,健聽,健聽
+data\features\HKSLLEX-2023-00001190.pt,356,115,basketball,籃球,籃球
+data\features\HKSLLEX-2023-00003254.pt,130,173,Sai Wan Ho,西灣河,
+data\features\HKSLLEX-2023-00000934.pt,820,67,disabled person,殘疾人,殘疾人士
+data\features\HKSLLEX-2023-00002726.pt,1134,173,germany,德國,德國
+data\features\HKSLLEX-2023-00000189.pt,1781,65,parents,家長,家長
+data\features\HKSLLEX-2023-00000283.pt,1647,79,my,我的,我嘅
+data\features\HKSLLEX-2023-00002902.pt,326,154,back up,後備,後備
+data\features\HKSLLEX-2023-00000790.pt,1023,69,ferocious,兇惡,兇惡
+data\features\HKSLLEX-2023-00002382.pt,1089,115,fourth,第四,第四
+data\features\HKSLLEX-2023-00001484.pt,644,134,cocacola,可口可樂,可口可樂
+data\features\HKSLLEX-2023-00002550.pt,2390,154,superior,上司,上司
+data\features\HKSLLEX-2023-00002590.pt,262,173,alright,好吧,好吧
+data\features\HKSLLEX-2023-00003496.pt,1600,115,milk tea with condensed milk,茶走,
+data\features\HKSLLEX-2023-00001203.pt,860,115,door,門,門
+data\features\HKSLLEX-2023-00002277.pt,1156,134,go back and forth,來回,來回
+data\features\HKSLLEX-2023-00000324.pt,527,56,cancellation,取消,取消
+data\features\HKSLLEX-2023-00001553.pt,1111,134,frog,青蛙,青蛙
+data\features\HKSLLEX-2023-00000512.pt,502,66,busy,忙碌,忙碌
+data\features\HKSLLEX-2023-00002210.pt,2520,134,tongue,舌頭,舌頭
+data\features\HKSLLEX-2023-00001891.pt,1398,173,isolated,孤立,孤立
+data\features\HKSLLEX-2023-00003006.pt,1087,125,foul,淘汰,淘汰
+data\features\HKSLLEX-2023-00000179.pt,2532,64,tournament,比賽,比賽
+data\features\HKSLLEX-2023-00003404.pt,1104,115,fried noodles,炒麵,
+data\features\HKSLLEX-2023-00001084.pt,2287,134,spoon,湯匙,湯匙
+data\features\HKSLLEX-2023-00002489.pt,1998,163,regular,有規律,有規律
+data\features\HKSLLEX-2023-00001409.pt,701,192,corkscrew,開瓶器,開瓶器
+data\features\HKSLLEX-2023-00003598.pt,129,96,Sai Wan,西環,
+data\features\HKSLLEX-2023-00001474.pt,261,125,alone,獨自,獨自
+data\features\HKSLLEX-2023-00000397.pt,1443,79,kneel,跪下,跪下
+data\features\HKSLLEX-2023-00001559.pt,899,125,eagle,鷹,鷹
+data\features\HKSLLEX-2023-00000380.pt,1546,83,magnet,磁石,磁石
+data\features\HKSLLEX-2023-00000419.pt,885,69,drop,丟下,丟低
+data\features\HKSLLEX-2023-00001383.pt,1174,144,gossip,八卦,八卦
+data\features\HKSLLEX-2023-00003213.pt,124,154,Prince Edward,太子,
+data\features\HKSLLEX-2023-00000882.pt,389,74,beneath,下,下
+data\features\HKSLLEX-2023-00000638.pt,1878,63,policeman,警察,警察
+data\features\HKSLLEX-2023-00001142.pt,1186,125,grapes,葡萄,提子
+data\features\HKSLLEX-2023-00001397.pt,2450,134,teeth,牙齒,牙
+data\features\HKSLLEX-2023-00001741.pt,2154,154,shark,鯊魚,鯊魚
+data\features\HKSLLEX-2023-00002876.pt,1003,163,fan,扇,扇
+data\features\HKSLLEX-2023-00000654.pt,1550,63,mailman,郵差,郵差
+data\features\HKSLLEX-2023-00003402.pt,2084,106,salty fried donut,鹹煎餅,
+data\features\HKSLLEX-2023-00003196.pt,105,163,Ngau Tau Kok,牛頭角,
+data\features\HKSLLEX-2023-00000028.pt,2185,80,shy,怕醜,怕醜
+data\features\HKSLLEX-2023-00003412.pt,376,115,beef congee,滑牛粥,
+data\features\HKSLLEX-2023-00001143.pt,1186,125,grapes,葡萄,提子
+data\features\HKSLLEX-2023-00002431.pt,2465,106,therapy,治療,治療
+data\features\HKSLLEX-2023-00001850.pt,2643,163,wallet,銀包,銀包
+data\features\HKSLLEX-2023-00000905.pt,1340,59,illness,病,病
+data\features\HKSLLEX-2023-00001727.pt,1736,192,open,打開,打開
+data\features\HKSLLEX-2023-00002247.pt,1822,144,perspective,角度,角度
+data\features\HKSLLEX-2023-00002887.pt,1705,163,not used to,不習慣,唔習慣
+data\features\HKSLLEX-2023-00002678.pt,1874,134,point,指明,指明
+data\features\HKSLLEX-2023-00002949.pt,2527,134,total,總數,總數
+data\features\HKSLLEX-2023-00000816.pt,2374,70,substantial,內涵,內涵
+data\features\HKSLLEX-2023-00002315.pt,856,115,dont need,不需要,唔需要
+data\features\HKSLLEX-2023-00000109.pt,2489,67,thursday,週四,星期四
+data\features\HKSLLEX-2023-00002482.pt,303,144,at,在,喺
+data\features\HKSLLEX-2023-00002084.pt,995,144,fair,公平,公平
+data\features\HKSLLEX-2023-00000955.pt,1407,60,jealous,嫉妒,嫉妒
+data\features\HKSLLEX-2023-00000895.pt,1782,92,park,公園,公園
+data\features\HKSLLEX-2023-00000384.pt,998,72,fall,摔親,跌親
+data\features\HKSLLEX-2023-00000123.pt,2683,64,wet,濕,濕
+data\features\HKSLLEX-2023-00000128.pt,1672,78,new,新的,新的
+data\features\HKSLLEX-2023-00001739.pt,1968,154,raisin,提子乾,提子乾
+data\features\HKSLLEX-2023-00002435.pt,2194,134,sign paper,簽名,簽名
+data\features\HKSLLEX-2023-00000357.pt,1209,72,gullible,容易上當的,容易上當嘅
+data\features\HKSLLEX-2023-00002250.pt,2734,115,worse,惡化,惡化
+data\features\HKSLLEX-2023-00003050.pt,2189,134,side,邊,邊
+data\features\HKSLLEX-2023-00002790.pt,1131,182,gate close,閂閘,閂閘
+data\features\HKSLLEX-2023-00000422.pt,1433,52,kid,小童,小童
+data\features\HKSLLEX-2023-00003034.pt,1590,134,mess,混亂,混亂
+data\features\HKSLLEX-2023-00000573.pt,714,76,crane,吊車,吊車
+data\features\HKSLLEX-2023-00000913.pt,1766,86,pain,痛,痛
+data\features\HKSLLEX-2023-00001004.pt,2395,144,surf,衝浪,衝浪
+data\features\HKSLLEX-2023-00001129.pt,1887,144,popcorn,爆谷,爆谷
+data\features\HKSLLEX-2023-00003054.pt,1879,144,policy,政策,政策
+data\features\HKSLLEX-2023-00000103.pt,1777,74,parade,遊行,遊行
+data\features\HKSLLEX-2023-00000457.pt,2461,73,thank you,謝謝,謝謝
+data\features\HKSLLEX-2023-00002636.pt,427,182,blush,臉紅,臉紅
