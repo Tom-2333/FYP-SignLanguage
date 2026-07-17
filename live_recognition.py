@@ -19,7 +19,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 # ================== 設定路徑 ==================
 MODEL_PATH = 'holistic_landmarker.task'      # MediaPipe 模型
-ONNX_PATH = 'sign_language_mla.onnx'         # ONNX CTC 模型
+ONNX_PATH = 'model/sign_language_mla.onnx'         # ONNX CTC 模型
 GLOSS_MAP_PATH = 'data/gloss_to_id.json'     # gloss → ID
 
 # ================== 載入 gloss 對照表 ==================
