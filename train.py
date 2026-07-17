@@ -15,27 +15,36 @@ def train_one_epoch(
     criterion: nn.Module,
     optimizer: torch.optim.Optimizer,
     device: torch.device,
+    scaler: Optional[torch.amp.GradScaler] = None,   # 改這裡
     grad_clip: Optional[float] = None,
 ) -> float:
     model.train()
     total_loss = 0.0
 
     for x, targets, input_lengths, target_lengths in loader:
-        x = x.to(device)
-        targets = targets.to(device)
-        input_lengths = input_lengths.to(device)
-        target_lengths = target_lengths.to(device)
+        x = x.to(device, non_blocking=True)
+        targets = targets.to(device, non_blocking=True)
+        input_lengths = input_lengths.to(device, non_blocking=True)
+        target_lengths = target_lengths.to(device, non_blocking=True)
 
-        log_probs = model(x, input_lengths=input_lengths)
-        # CTC expects [T, B, C], so permute time and batch.
-        log_probs = log_probs.permute(1, 0, 2)
+        with torch.amp.autocast('cuda', enabled=(scaler is not None)):
+            log_probs = model(x, input_lengths=input_lengths)
+            log_probs = log_probs.permute(1, 0, 2)
+            loss = criterion(log_probs, targets, input_lengths, target_lengths)
 
-        loss = criterion(log_probs, targets, input_lengths, target_lengths)
         optimizer.zero_grad()
-        loss.backward()
-        if grad_clip is not None:
-            nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
-        optimizer.step()
+        if scaler is not None:
+            scaler.scale(loss).backward()
+            scaler.unscale_(optimizer)
+            if grad_clip is not None:
+                nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()
+            if grad_clip is not None:
+                nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
+            optimizer.step()
 
         total_loss += loss.item() * x.size(0)
 
@@ -53,14 +62,13 @@ def evaluate(
     total_loss = 0.0
 
     for x, targets, input_lengths, target_lengths in loader:
-        x = x.to(device)
-        targets = targets.to(device)
-        input_lengths = input_lengths.to(device)
-        target_lengths = target_lengths.to(device)
+        x = x.to(device, non_blocking=True)
+        targets = targets.to(device, non_blocking=True)
+        input_lengths = input_lengths.to(device, non_blocking=True)
+        target_lengths = target_lengths.to(device, non_blocking=True)
 
         log_probs = model(x, input_lengths=input_lengths)
         log_probs = log_probs.permute(1, 0, 2)
-
         loss = criterion(log_probs, targets, input_lengths, target_lengths)
         total_loss += loss.item() * x.size(0)
 
@@ -72,11 +80,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--train-manifest", type=str, required=True)
     parser.add_argument("--val-manifest", type=str, default=None)
     parser.add_argument("--num-classes", type=int, required=True)
-    parser.add_argument("--batch-size", type=int, default=16)
-    parser.add_argument("--epochs", type=int, default=50)
-    parser.add_argument("--lr", type=float, default=3e-4)
-    parser.add_argument("--num-workers", type=int, default=4)
+    parser.add_argument("--batch-size", type=int, default=256)
+    parser.add_argument("--epochs", type=int, default=200)
+    parser.add_argument("--lr", type=float, default=1e-4)
+    parser.add_argument("--num-workers", type=int, default=8)
     parser.add_argument("--grad-clip", type=float, default=1.0)
+    parser.add_argument("--weight-decay", type=float, default=5e-2)
+    parser.add_argument("--dropout", type=float, default=0.4)
     parser.add_argument("--save-path", type=str, default="checkpoints/best.pt")
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     return parser.parse_args()
@@ -116,11 +126,14 @@ def main() -> None:
         num_layers=4,
         num_heads=4,
         kv_rank=16,
-        dropout=0.1,
+        dropout=args.dropout,
     ).to(device)
 
     criterion = nn.CTCLoss(blank=0, zero_infinity=True)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-2)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+
+    # Setup AMP scaler only if CUDA is available
+    scaler = torch.amp.GradScaler('cuda') if device.type == "cuda" else None
 
     best_val = float("inf")
     os.makedirs(os.path.dirname(args.save_path), exist_ok=True)
@@ -132,6 +145,7 @@ def main() -> None:
             criterion,
             optimizer,
             device,
+            scaler=scaler,
             grad_clip=args.grad_clip,
         )
 
