@@ -14,6 +14,15 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 
 python -c "import torch; print(torch.cuda.is_available())"
 
+python train.py `
+    --train-manifest data/train.csv `
+    --val-manifest data/val.csv `
+    --num-classes 2762 `
+    --batch-size 32 `
+    --epochs 100 `
+    --save-path checkpoints/best.pt `
+    --device cuda
+
 # 執行即時手語辨識
 python live_recognition.py
 
