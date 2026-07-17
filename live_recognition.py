@@ -5,16 +5,15 @@
 結合 MediaPipe Holistic (225維) + ONNX CTC 模型 + 骨架繪圖。
 支援 Intel OpenVINO GPU 加速，若不可用則自動降級為 CPU。
 """
-
+import json
+import time
+from collections import deque
 import cv2
 import numpy as np
 import onnxruntime as ort
 import mediapipe as mp
 from mediapipe.tasks import python as mp_python
 from mediapipe.tasks.python import vision
-import json
-import time
-from collections import deque
 from PIL import Image, ImageDraw, ImageFont
 
 # ================== 設定路徑 ==================
